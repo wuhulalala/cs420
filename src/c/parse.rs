@@ -351,7 +351,10 @@ impl AssertSupported for ForInitializer {
 impl AssertSupported for Statement {
     fn assert_supported(&self) {
         match self {
-            Self::Labeled(_) => panic!("Statement::Labeled"),
+            Self::Labeled(stmt) => {
+                stmt.node.label.assert_supported();
+                stmt.node.statement.assert_supported()
+            }
             Self::Compound(items) => items.assert_supported(),
             Self::Expression(expr) => expr.assert_supported(),
             Self::If(stmt) => {
