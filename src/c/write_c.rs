@@ -401,14 +401,11 @@ impl WriteString for (&Vec<Node<SpecifierQualifier>>, &Option<Node<Declarator>>)
                 decl.write_string()
             )
         } else {
-            format!(
-                "{}",
-                self.0
+            self.0
                     .iter()
                     .map(WriteString::write_string)
                     .collect::<Vec<_>>()
                     .join(" ")
-            )
         }
     }
 }
@@ -510,7 +507,7 @@ impl WriteString for InitDeclarator {
                 init.write_string()
             )
         } else {
-            format!("{}", self.declarator.write_string(),)
+            self.declarator.write_string()
         }
     }
 }
@@ -518,7 +515,7 @@ impl WriteString for InitDeclarator {
 impl WriteString for Declarator {
     fn write_string(&self) -> String {
         assert!(self.extensions.is_empty());
-        format!("{}", (&self.kind, &self.derived).write_string())
+        (&self.kind, &self.derived).write_string()
     }
 }
 
@@ -578,7 +575,7 @@ impl WriteString for DerivedDeclarator {
             DerivedDeclarator::Function(function_declarator) => function_declarator.write_string(),
             DerivedDeclarator::KRFunction(identifier) => {
                 assert!(identifier.is_empty());
-                format!("()")
+                "()".to_string()
             }
             DerivedDeclarator::Block(_) => todo!(),
         }
@@ -623,14 +620,11 @@ impl WriteString for (&Vec<Node<DeclarationSpecifier>>, &Option<Node<Declarator>
         if let Some(decl) = self.1 {
             (self.0, decl).write_string()
         } else {
-            format!(
-                "{}",
-                self.0
+            self.0
                     .iter()
                     .map(WriteString::write_string)
                     .collect::<Vec<_>>()
                     .join(" ")
-            )
         }
     }
 }
@@ -707,7 +701,7 @@ impl WriteString for StructDeclaration {
     fn write_string(&self) -> String {
         match self {
             Self::Field(field) => {
-                format!("{}", field.write_string())
+                field.write_string()
             }
             Self::StaticAssert(_) => panic!(),
         }
@@ -797,17 +791,17 @@ impl WriteString for Integer {
         let mut integer = String::new();
         match self.base {
             IntegerBase::Binary => integer.push_str("0b"),
-            IntegerBase::Octal => integer.push_str("0"),
+            IntegerBase::Octal => integer.push('0'),
             IntegerBase::Hexadecimal => integer.push_str("0x"),
             _ => {}
         }
 
         integer.push_str(&self.number);
         if self.suffix.unsigned {
-            integer.push_str("U");
+            integer.push('U');
         }
         match self.suffix.size {
-            IntegerSize::Long => integer.push_str("l"),
+            IntegerSize::Long => integer.push('l'),
             IntegerSize::LongLong => integer.push_str("ll"),
             _ => {}
         }
@@ -824,7 +818,7 @@ impl WriteString for Float {
         }
         float.push_str(&self.number);
         match self.suffix.format {
-            FloatFormat::Float => float.push_str("f"),
+            FloatFormat::Float => float.push('f'),
             FloatFormat::LongDouble => float.push_str("ld"),
             FloatFormat::TS18661Format(_) => panic!(),
             _ => {}
@@ -879,6 +873,6 @@ impl WriteString for Initializer {
 impl WriteString for InitializerListItem {
     fn write_string(&self) -> String {
         assert!(self.designation.is_empty());
-        format!("{}", self.initializer.write_string())
+        self.initializer.write_string()
     }
 }
