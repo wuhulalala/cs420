@@ -402,10 +402,10 @@ impl WriteString for (&Vec<Node<SpecifierQualifier>>, &Option<Node<Declarator>>)
             )
         } else {
             self.0
-                    .iter()
-                    .map(WriteString::write_string)
-                    .collect::<Vec<_>>()
-                    .join(" ")
+                .iter()
+                .map(WriteString::write_string)
+                .collect::<Vec<_>>()
+                .join(" ")
         }
     }
 }
@@ -524,12 +524,9 @@ impl WriteString for (&Node<DeclaratorKind>, &Vec<Node<DerivedDeclarator>>) {
         let mut decl = String::new();
         let mut count = 0;
         for item in self.1 {
-            match &item.node {
-                DerivedDeclarator::Pointer(_) => {
-                    decl.insert_str(0, item.write_string().as_str());
-                    count += 1;
-                }
-                _ => {}
+            if let DerivedDeclarator::Pointer(_) = item.node {
+                decl.insert_str(0, item.write_string().as_str());
+                count += 1;
             }
         }
         format!(
@@ -621,10 +618,10 @@ impl WriteString for (&Vec<Node<DeclarationSpecifier>>, &Option<Node<Declarator>
             (self.0, decl).write_string()
         } else {
             self.0
-                    .iter()
-                    .map(WriteString::write_string)
-                    .collect::<Vec<_>>()
-                    .join(" ")
+                .iter()
+                .map(WriteString::write_string)
+                .collect::<Vec<_>>()
+                .join(" ")
         }
     }
 }
@@ -700,9 +697,7 @@ impl WriteString for Vec<Node<StructDeclaration>> {
 impl WriteString for StructDeclaration {
     fn write_string(&self) -> String {
         match self {
-            Self::Field(field) => {
-                field.write_string()
-            }
+            Self::Field(field) => field.write_string(),
             Self::StaticAssert(_) => panic!(),
         }
     }
@@ -812,9 +807,8 @@ impl WriteString for Integer {
 impl WriteString for Float {
     fn write_string(&self) -> String {
         let mut float = String::new();
-        match self.base {
-            FloatBase::Hexadecimal => float.push_str("0x"),
-            _ => {}
+        if self.base == FloatBase::Hexadecimal {
+            float.push_str("0x");
         }
         float.push_str(&self.number);
         match self.suffix.format {

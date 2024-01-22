@@ -1,0 +1,191 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "int_greater_than"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "i"
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Unsigned
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "j"
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Statement
+                        IfStatement
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "i"
+                                    Expression
+                                        Identifier "j"
+                                    BinaryOperator Greater
+                            Statement Return
+                                Expression
+                                    Constant
+                                        Integer "1"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                            Statement Return
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "char_greater_than"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Char
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "i"
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Unsigned
+                            DeclarationSpecifier
+                                TypeSpecifier Char
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "j"
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Statement
+                        IfStatement
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "i"
+                                    Expression
+                                        Identifier "j"
+                                    BinaryOperator Greater
+                            Statement Return
+                                Expression
+                                    Constant
+                                        Integer "1"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                            Statement Return
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "r1"
+                            Initializer
+                                Expression
+                                    CallExpression
+                                        Expression
+                                            Identifier "int_greater_than"
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator Minus
+                                                Expression
+                                                    Constant
+                                                        Integer "1"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                        Expression
+                                            Constant
+                                                Integer "1"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "r2"
+                            Initializer
+                                Expression
+                                    CallExpression
+                                        Expression
+                                            Identifier "char_greater_than"
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator Minus
+                                                Expression
+                                                    Constant
+                                                        Integer "1"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                        Expression
+                                            Constant
+                                                Integer "1"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "r1"
+                                        Expression
+                                            Constant
+                                                Integer "1"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator Equals
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "r2"
+                                        Expression
+                                            Constant
+                                                Integer "0"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator Equals
+                                BinaryOperator LogicalAnd
