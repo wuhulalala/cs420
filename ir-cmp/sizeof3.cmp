@@ -1,0 +1,4 @@
+11c11
+<   %b0:i1:i32 = typecast 4:i64 to i32
+---
+>   %b0:i1:i32 = typecast 4:u64 to i32

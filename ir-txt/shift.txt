@@ -1,0 +1,104 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Char
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "a"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "127"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Char
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "b"
+                            Initializer
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "a"
+                                        Expression
+                                            Constant
+                                                Integer "1"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator ShiftLeft
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Unsigned
+                        DeclarationSpecifier
+                            TypeSpecifier Char
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "c"
+                            Initializer
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            CastExpression
+                                                TypeName
+                                                    SpecifierQualifier
+                                                        TypeSpecifier Unsigned
+                                                    SpecifierQualifier
+                                                        TypeSpecifier Char
+                                                Expression
+                                                    Identifier "b"
+                                        Expression
+                                            Constant
+                                                Integer "1"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator ShiftRight
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "b"
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator Minus
+                                                Expression
+                                                    Constant
+                                                        Integer "2"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                        BinaryOperator Equals
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "c"
+                                        Expression
+                                            Constant
+                                                Integer "7F"
+                                                    IntegerBase Hexadecimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator Equals
+                                BinaryOperator LogicalAnd

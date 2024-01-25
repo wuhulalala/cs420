@@ -1,0 +1,18 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Statement Return
+                        Expression
+                            Constant
+                                Integer "0"
+                                    IntegerBase Decimal
+                                    IntegerSuffix false false
+                                        IntegerSize Int

@@ -1,0 +1,45 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "x"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "3"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "y"
+                            Initializer
+                                Expression
+                                    SizeOfVal
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator PreIncrement
+                                                Expression
+                                                    Identifier "x"
+                BlockItem
+                    Statement Return
+                        Expression
+                            Identifier "x"

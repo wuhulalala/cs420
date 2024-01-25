@@ -1,0 +1,123 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "a"
+                Initializer
+                    Expression
+                        UnaryOperatorExpression
+                            UnaryOperator Minus
+                            Expression
+                                Constant
+                                    Integer "1"
+                                        IntegerBase Decimal
+                                        IntegerSuffix false false
+                                            IntegerSize Int
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Long
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "b"
+                Initializer
+                    Expression
+                        UnaryOperatorExpression
+                            UnaryOperator Minus
+                            Expression
+                                Constant
+                                    Integer "1"
+                                        IntegerBase Decimal
+                                        IntegerSuffix false false
+                                            IntegerSize Long
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Float
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "c"
+                Initializer
+                    Expression
+                        UnaryOperatorExpression
+                            UnaryOperator Minus
+                            Expression
+                                Constant
+                                    Float "1.5"
+                                        FloatBase Decimal
+                                        FloatSuffix false
+                                            FloatFormat Float
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Double
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "d"
+                Initializer
+                    Expression
+                        UnaryOperatorExpression
+                            UnaryOperator Minus
+                            Expression
+                                Constant
+                                    Float "1.5"
+                                        FloatBase Decimal
+                                        FloatSuffix false
+                                            FloatFormat Double
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    BinaryOperatorExpression
+                                                        Expression
+                                                            Identifier "a"
+                                                        Expression
+                                                            Identifier "b"
+                                                        BinaryOperator Plus
+                                                Expression
+                                                    CastExpression
+                                                        TypeName
+                                                            SpecifierQualifier
+                                                                TypeSpecifier Int
+                                                        Expression
+                                                            Identifier "c"
+                                                BinaryOperator Plus
+                                        Expression
+                                            CastExpression
+                                                TypeName
+                                                    SpecifierQualifier
+                                                        TypeSpecifier Long
+                                                Expression
+                                                    Identifier "d"
+                                        BinaryOperator Plus
+                                Expression
+                                    UnaryOperatorExpression
+                                        UnaryOperator Minus
+                                        Expression
+                                            Constant
+                                                Integer "4"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                BinaryOperator Equals

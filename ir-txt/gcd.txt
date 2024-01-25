@@ -1,0 +1,159 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "gcd"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "a"
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "b"
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "a"
+                                Expression
+                                    ConditionalExpression
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "a"
+                                                Expression
+                                                    Constant
+                                                        Integer "0"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                                BinaryOperator Greater
+                                        Expression
+                                            Identifier "a"
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator Minus
+                                                Expression
+                                                    Identifier "a"
+                                BinaryOperator Assign
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "b"
+                                Expression
+                                    ConditionalExpression
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "b"
+                                                Expression
+                                                    Constant
+                                                        Integer "0"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                                BinaryOperator Greater
+                                        Expression
+                                            Identifier "b"
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator Minus
+                                                Expression
+                                                    Identifier "b"
+                                BinaryOperator Assign
+                BlockItem
+                    Statement
+                        WhileStatement
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "a"
+                                    Expression
+                                        Identifier "b"
+                                    BinaryOperator NotEquals
+                            Statement Compound
+                                BlockItem
+                                    Statement
+                                        IfStatement
+                                            Expression
+                                                BinaryOperatorExpression
+                                                    Expression
+                                                        Identifier "a"
+                                                    Expression
+                                                        Identifier "b"
+                                                    BinaryOperator Greater
+                                            Statement Compound
+                                                BlockItem
+                                                    Statement
+                                                        Expression
+                                                            BinaryOperatorExpression
+                                                                Expression
+                                                                    Identifier "a"
+                                                                Expression
+                                                                    Identifier "b"
+                                                                BinaryOperator AssignMinus
+                                            Statement Compound
+                                                BlockItem
+                                                    Statement
+                                                        Expression
+                                                            BinaryOperatorExpression
+                                                                Expression
+                                                                    Identifier "b"
+                                                                Expression
+                                                                    Identifier "a"
+                                                                BinaryOperator AssignMinus
+                BlockItem
+                    Statement Return
+                        Expression
+                            Identifier "a"
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    CallExpression
+                                        Expression
+                                            Identifier "gcd"
+                                        Expression
+                                            Constant
+                                                Integer "18"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        Expression
+                                            Constant
+                                                Integer "21"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                Expression
+                                    Constant
+                                        Integer "3"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Equals

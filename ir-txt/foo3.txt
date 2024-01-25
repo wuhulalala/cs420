@@ -1,0 +1,118 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "nonce"
+                Initializer
+                    Expression
+                        Constant
+                            Integer "1"
+                                IntegerBase Decimal
+                                IntegerSuffix false false
+                                    IntegerSize Int
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "g"
+                Initializer
+                    Expression
+                        Constant
+                            Integer "10"
+                                IntegerBase Decimal
+                                IntegerSuffix false false
+                                    IntegerSize Int
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "foo"
+                    DerivedDeclarator
+                        FunctionDeclarator
+                            ParameterDeclaration
+                                DeclarationSpecifier
+                                    TypeSpecifier Int
+                            ParameterDeclaration
+                                DeclarationSpecifier
+                                    TypeSpecifier Int
+                                Declarator
+                                    DeclaratorKind
+                                        Identifier "k"
+                            Ellipsis None
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "i"
+                            Initializer
+                                Expression
+                                    Identifier "g"
+                BlockItem
+                    Statement Return
+                        Expression
+                            CallExpression
+                                Expression
+                                    Identifier "foo"
+                                Expression
+                                    Identifier "i"
+                                Expression
+                                    Identifier "i"
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "foo"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "i"
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "j"
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "i"
+                                        Expression
+                                            Identifier "j"
+                                        BinaryOperator Plus
+                                Expression
+                                    Identifier "nonce"
+                                BinaryOperator Plus

@@ -1,0 +1,198 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                StorageClassSpecifier Typedef
+            DeclarationSpecifier
+                TypeSpecifier
+                    StructType
+                        StructKind Struct
+                        StructDeclaration
+                            StructField
+                                SpecifierQualifier
+                                    TypeSpecifier Char
+                                StructDeclarator
+                                    Declarator
+                                        DeclaratorKind
+                                            Identifier "a"
+                        StructDeclaration
+                            StructField
+                                SpecifierQualifier
+                                    TypeSpecifier
+                                        StructType
+                                            StructKind Struct
+                                            StructDeclaration
+                                                StructField
+                                                    SpecifierQualifier
+                                                        TypeSpecifier Int
+                                                    StructDeclarator
+                                                        Declarator
+                                                            DeclaratorKind
+                                                                Identifier "b"
+                                                            DerivedDeclarator
+                                                                ArrayDeclarator
+                                                                    ArraySize VariableExpression
+                                                                        Expression
+                                                                            Constant
+                                                                                Integer "4"
+                                                                                    IntegerBase Decimal
+                                                                                    IntegerSuffix false false
+                                                                                        IntegerSize Int
+                        StructDeclaration
+                            StructField
+                                SpecifierQualifier
+                                    TypeSpecifier Long
+                                StructDeclarator
+                                    Declarator
+                                        DeclaratorKind
+                                            Identifier "c"
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "Temp"
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeQualifier Const
+                        DeclarationSpecifier
+                            TypeSpecifier TypedefName
+                                Identifier "Temp"
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "temp"
+                            Initializer
+                                InitializerListItem
+                                    Initializer
+                                        Expression
+                                            Constant
+                                                Integer "1"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                InitializerListItem
+                                    Initializer
+                                        InitializerListItem
+                                            Initializer
+                                                InitializerListItem
+                                                    Initializer
+                                                        Expression
+                                                            Constant
+                                                                Integer "2"
+                                                                    IntegerBase Decimal
+                                                                    IntegerSuffix false false
+                                                                        IntegerSize Int
+                                                InitializerListItem
+                                                    Initializer
+                                                        Expression
+                                                            Constant
+                                                                Integer "3"
+                                                                    IntegerBase Decimal
+                                                                    IntegerSuffix false false
+                                                                        IntegerSize Int
+                                                InitializerListItem
+                                                    Initializer
+                                                        Expression
+                                                            Constant
+                                                                Integer "4"
+                                                                    IntegerBase Decimal
+                                                                    IntegerSuffix false false
+                                                                        IntegerSize Int
+                                                InitializerListItem
+                                                    Initializer
+                                                        Expression
+                                                            Constant
+                                                                Integer "5"
+                                                                    IntegerBase Decimal
+                                                                    IntegerSuffix false false
+                                                                        IntegerSize Int
+                                InitializerListItem
+                                    Initializer
+                                        Expression
+                                            Constant
+                                                Integer "6"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier TypedefName
+                                Identifier "Temp"
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "temp2"
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "temp2"
+                                Expression
+                                    Identifier "temp"
+                                BinaryOperator Assign
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "sum"
+                            Initializer
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    MemberExpression
+                                                        MemberOperator Direct
+                                                        Expression
+                                                            Identifier "temp2"
+                                                        Identifier "a"
+                                                Expression
+                                                    BinaryOperatorExpression
+                                                        Expression
+                                                            MemberExpression
+                                                                MemberOperator Direct
+                                                                Expression
+                                                                    Identifier "temp2"
+                                                                Identifier "b"
+                                                        Expression
+                                                            Constant
+                                                                Integer "2"
+                                                                    IntegerBase Decimal
+                                                                    IntegerSuffix false false
+                                                                        IntegerSize Int
+                                                        BinaryOperator Index
+                                                BinaryOperator Plus
+                                        Expression
+                                            MemberExpression
+                                                MemberOperator Direct
+                                                Expression
+                                                    Identifier "temp2"
+                                                Identifier "c"
+                                        BinaryOperator Plus
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "sum"
+                                Expression
+                                    Constant
+                                        Integer "11"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Equals

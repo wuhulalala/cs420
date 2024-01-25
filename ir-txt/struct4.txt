@@ -1,0 +1,101 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "nonce"
+                Initializer
+                    Expression
+                        Constant
+                            Integer "1"
+                                IntegerBase Decimal
+                                IntegerSuffix false false
+                                    IntegerSize Int
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier
+                    StructType
+                        StructKind Struct
+                        Identifier "Foo"
+                        StructDeclaration
+                            StructField
+                                SpecifierQualifier
+                                    TypeSpecifier Int
+                                StructDeclarator
+                                    Declarator
+                                        DeclaratorKind
+                                            Identifier "x"
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier
+                    StructType
+                        StructKind Struct
+                        Identifier "Foo"
+            Declarator
+                DeclaratorKind
+                    Identifier "f"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier
+                                StructType
+                                    StructKind Struct
+                                    Identifier "Foo"
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "x"
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    MemberExpression
+                                        MemberOperator Direct
+                                        Expression
+                                            Identifier "x"
+                                        Identifier "x"
+                                Expression
+                                    Identifier "nonce"
+                                BinaryOperator Assign
+                BlockItem
+                    Statement Return
+                        Expression
+                            Identifier "x"
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "x"
+                            Initializer
+                                Expression
+                                    MemberExpression
+                                        MemberOperator Direct
+                                        Expression
+                                            CallExpression
+                                                Expression
+                                                    Identifier "f"
+                                        Identifier "x"
+                BlockItem
+                    Statement Return
+                        Expression
+                            Identifier "x"

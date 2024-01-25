@@ -1,0 +1,38 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "temp"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "temp"
+                                Expression
+                                    Constant
+                                        Integer "FFFFFFFF"
+                                            IntegerBase Hexadecimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Less

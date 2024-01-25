@@ -1,0 +1,186 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "fibonacci"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "n"
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "i"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "t1"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "t2"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "1"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "next_term"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Statement
+                        IfStatement
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "n"
+                                    Expression
+                                        Constant
+                                            Integer "2"
+                                                IntegerBase Decimal
+                                                IntegerSuffix false false
+                                                    IntegerSize Int
+                                    BinaryOperator Less
+                            Statement Compound
+                                BlockItem
+                                    Statement Return
+                                        Expression
+                                            Identifier "n"
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "i"
+                                Expression
+                                    Constant
+                                        Integer "1"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Assign
+                BlockItem
+                    Statement
+                        DoWhileStatement
+                            Statement Compound
+                                BlockItem
+                                    Statement
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "next_term"
+                                                Expression
+                                                    BinaryOperatorExpression
+                                                        Expression
+                                                            Identifier "t1"
+                                                        Expression
+                                                            Identifier "t2"
+                                                        BinaryOperator Plus
+                                                BinaryOperator Assign
+                                BlockItem
+                                    Statement
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "t1"
+                                                Expression
+                                                    Identifier "t2"
+                                                BinaryOperator Assign
+                                BlockItem
+                                    Statement
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "t2"
+                                                Expression
+                                                    Identifier "next_term"
+                                                BinaryOperator Assign
+                                BlockItem
+                                    Statement
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator PreIncrement
+                                                Expression
+                                                    Identifier "i"
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "i"
+                                    Expression
+                                        Identifier "n"
+                                    BinaryOperator Less
+                BlockItem
+                    Statement Return
+                        Expression
+                            Identifier "t2"
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    CallExpression
+                                        Expression
+                                            Identifier "fibonacci"
+                                        Expression
+                                            Constant
+                                                Integer "9"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                Expression
+                                    Constant
+                                        Integer "34"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Equals

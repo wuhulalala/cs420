@@ -1,0 +1,53 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "a"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "3"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "b"
+                            Initializer
+                                Expression
+                                    SizeOfVal
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator Negate
+                                                Expression
+                                                    UnaryOperatorExpression
+                                                        Expression
+                                                            Identifier "a"
+                                                        UnaryOperator PostIncrement
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "a"
+                                Expression
+                                    Identifier "b"
+                                BinaryOperator Plus

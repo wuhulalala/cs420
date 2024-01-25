@@ -1,0 +1,28 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    SizeOfTy
+                                        TypeName
+                                            SpecifierQualifier
+                                                TypeQualifier Const
+                                            SpecifierQualifier
+                                                TypeSpecifier Int
+                                Expression
+                                    Constant
+                                        Integer "4"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Equals
