@@ -1,6 +1,15 @@
+struct a {
+    char a;
+    struct {
+        int b[2][4];
+    };
+    double c;
+};
 int main() {
-    int a[2][2][3] = {
-        {{1, 2, 3}, {4, 5, 6}}, {{1, 2, 3}, {4, 5, 6}}
+    struct a  temp = {
+        'a',
+        {{{1, 2 ,3 ,4}, {5, 6, 7, 8}}},
+        0.1
     };
     return 0;
 }

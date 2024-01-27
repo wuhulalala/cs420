@@ -32,7 +32,7 @@
             },
             "args": [
                 "-i",
-                "examples/c/temp2.c"
+                "examples/c/test_reduced.c"
             ],
             "cwd": "${workspaceFolder}"
         },

@@ -46,8 +46,8 @@ use lang_c::ast::*;
 use lang_c::driver::Parse;
 use lang_c::span::Node;
 use ordered_float::OrderedFloat;
-use thiserror::Error;
 use std::cmp::max;
+use thiserror::Error;
 
 use crate::ir::{DtypeError, HasDtype, Named};
 use crate::*;
@@ -366,12 +366,9 @@ impl Irgen {
                 IrgenError::new(format!("specs: {specifiers:#?}\ndecl: {declarator:#?}"), e)
             })?;
 
-
         irgen
-            .add_phinodes(&signature,  &name_of_params)
-            .map_err(|e| {
-                IrgenError::new(format!("error about phinode"), e)
-            })?;
+            .add_phinodes(&signature, &name_of_params)
+            .map_err(|e| IrgenError::new(format!("error about phinode"), e))?;
         // Translates statement.
         irgen.translate_stmt(&source.statement.node, &mut context, None, None)?;
 
@@ -425,7 +422,6 @@ impl Irgen {
         Ok(())
     }
 
-    
     /// Adds a possibly existing declaration.
     ///
     /// Returns error if the previous declearation is incompatible with `decl`.
@@ -588,17 +584,15 @@ impl IrgenFunc<'_> {
         Ok(())
     }
 
-
-    /// Translate a declaration 
+    /// Translate a declaration
     fn translate_decl(
         &mut self,
         decl: &Declaration,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<(), IrgenErrorMessage> {
         let (base_dtype, is_typedef) =
             ir::Dtype::try_from_ast_declaration_specifiers(&decl.specifiers)
                 .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
-
 
         // We do not cover typedef declaration inside function
         assert!(!is_typedef);
@@ -611,149 +605,250 @@ impl IrgenFunc<'_> {
                 .with_ast_declarator(&declarator)
                 .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
-                let dtype = dtype.into_inner()
-                    .resolve_typedefs(&self.typedefs)
-                    .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
+            let dtype = dtype
+                .into_inner()
+                .resolve_typedefs(&self.typedefs)
+                .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
-                let name = name_of_declarator(&declarator);
+            let name = name_of_declarator(&declarator);
 
-                match &dtype {
-                    ir::Dtype::Unit { .. } => todo!(),
-                    // when applying initializer, type checking is necessary
-                    ir::Dtype::Int { .. }
-                    | ir::Dtype::Float { .. }
-                    | ir::Dtype::Pointer { .. } 
-                    | ir::Dtype::Struct { .. }
-                    | ir::Dtype::Array { .. } => {
-                        // Check whether Iniitalizer is exists
-                        if let Some(initializer) = &init_decl.node.initializer {
-                            match initializer.node.clone() {
-                                Initializer::Expression(_) => {
-                                    let value  = Some(self.translate_initializer(&initializer.node, context)?);
-                                    let _unused = self.translate_alloc(name.clone(), dtype.clone(), value, context)?;
-                                }
-                                _ => {
-                                    let _unused = self.translate_alloc(name.clone(), dtype.clone(), None, context)?;
-                                    let ptr = self.lookup_symbol_table(&name)?;
-                                    self.list_initializer(&initializer.node, ptr, dtype.clone(), context)?;
-                                }
+            match &dtype {
+                ir::Dtype::Unit { .. } => todo!(),
+                // when applying initializer, type checking is necessary
+                ir::Dtype::Int { .. } | ir::Dtype::Float { .. } | ir::Dtype::Pointer { .. } => {
+                    let value = if let Some(initializer) = &init_decl.node.initializer {
+                        Some(
+                            self.translate_initializer(&initializer.node, context)
+                                .unwrap(),
+                        )
+                    } else {
+                        None
+                    };
+
+                    let _unused = self.translate_alloc(name, dtype.clone(), value, context)?;
+                }
+                ir::Dtype::Struct { .. } => {
+                    if let Some(initializer) = &init_decl.node.initializer {
+                        match initializer.node.clone() {
+                            Initializer::Expression(_) => {
+                                let value =
+                                    Some(self.translate_initializer(&initializer.node, context)?);
+                                let _unused = self.translate_alloc(
+                                    name.clone(),
+                                    dtype.clone(),
+                                    value,
+                                    context,
+                                )?;
                             }
-                        } else {
-                            let _unused = self.translate_alloc(name, dtype.clone(), None, context)?;
-                        };
-
-                    }
-                    ir::Dtype::Function { .. } => todo!(),
-                    ir::Dtype::Typedef { .. } => panic!("typedef should be repalced by real dtype"),
-                };
-
+                            _ => {
+                                let _unused = self.translate_alloc(
+                                    name.clone(),
+                                    dtype.clone(),
+                                    None,
+                                    context,
+                                )?;
+                                let ptr = self.lookup_symbol_table(&name)?;
+                                self.translate_struct_initializer(&initializer.node, ptr, context)?;
+                            }
+                        }
+                    } else {
+                        let _unused = self.translate_alloc(name, dtype.clone(), None, context)?;
+                    };
+                }
+                ir::Dtype::Array { .. } => {
+                    // Check whether Iniitalizer is exists
+                    if let Some(initializer) = &init_decl.node.initializer {
+                        match initializer.node.clone() {
+                            Initializer::Expression(_) => {
+                                let value =
+                                    Some(self.translate_initializer(&initializer.node, context)?);
+                                let _unused = self.translate_alloc(
+                                    name.clone(),
+                                    dtype.clone(),
+                                    value,
+                                    context,
+                                )?;
+                            }
+                            _ => {
+                                let _unused = self.translate_alloc(
+                                    name.clone(),
+                                    dtype.clone(),
+                                    None,
+                                    context,
+                                )?;
+                                let ptr = self.lookup_symbol_table(&name)?;
+                                self.list_initializer(
+                                    &initializer.node,
+                                    ptr,
+                                    dtype.clone(),
+                                    context,
+                                )?;
+                            }
+                        }
+                    } else {
+                        let _unused = self.translate_alloc(name, dtype.clone(), None, context)?;
+                    };
+                }
+                ir::Dtype::Function { .. } => todo!(),
+                ir::Dtype::Typedef { .. } => panic!("typedef should be repalced by real dtype"),
+            };
         }
         Ok(())
     }
 
+    fn translate_struct_initializer(
+        &mut self,
+        initializer: &Initializer,
+        ptr: ir::Operand,
+        context: &mut Context,
+    ) -> Result<(), IrgenErrorMessage> {
+        match initializer.clone() {
+            Initializer::List(lists) => {
+                let name = ptr
+                    .dtype()
+                    .get_pointer_inner()
+                    .unwrap()
+                    .get_struct_name()
+                    .unwrap()
+                    .clone()
+                    .unwrap();
+
+                let dtype = self.structs.get(&name).unwrap().clone().unwrap();
+                let (_sizeof, _alignof, offsets) = dtype
+                    .clone()
+                    .get_struct_size_align_offsets()
+                    .unwrap()
+                    .clone()
+                    .unwrap();
+
+                let fields = dtype.clone().get_struct_fields().unwrap().clone().unwrap();
+
+                for (i, initial_item) in izip!(lists).enumerate() {
+                    let ptr_add = context.insert_instruction(ir::Instruction::GetElementPtr {
+                        ptr: ptr.clone(),
+                        offset: ir::Operand::Constant(ir::Constant::Int {
+                            value: *offsets.get(i).unwrap() as u128,
+                            width: 64,
+                            is_signed: true,
+                        }),
+                        dtype: ir::Dtype::pointer(fields.get(i).unwrap().deref().clone()),
+                    })?;
+                    match fields.get(i).unwrap().deref() {
+                        &ir::Dtype::Array { .. } => {
+                            self.list_initializer(
+                                &initial_item.node.initializer.node,
+                                ptr_add,
+                                fields.get(i).unwrap().deref().clone(),
+                                context,
+                            )?;
+                        }
+                        &ir::Dtype::Struct { .. } => self.translate_struct_initializer(
+                            &initial_item.node.initializer.node,
+                            ptr_add,
+                            context,
+                        )?,
+                        _ => {
+                            let val = match initial_item.node.initializer.node {
+                                Initializer::Expression(expr) => {
+                                    self.translate_expr_rvalue(&expr.node, context)?
+                                }
+                                Initializer::List(_) => panic!("must be expr"),
+                            };
+
+                            let val = self.translate_typecast(
+                                val,
+                                fields.get(i).unwrap().deref().clone(),
+                                context,
+                            )?;
+                            let _unused = context.insert_instruction(ir::Instruction::Store {
+                                ptr: ptr_add,
+                                value: val,
+                            })?;
+                        }
+                    }
+                }
+                Ok(())
+            }
+            _ => panic!("must be list"),
+        }
+    }
     fn list_initializer(
         &mut self,
         initializer: &Initializer,
         ptr: ir::Operand,
         dtype: ir::Dtype,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<(), IrgenErrorMessage> {
         match initializer.clone() {
             Initializer::List(lists) => {
                 let ptr = self.conver_array_to_ponter(
-                    ptr, 
-                    dtype
-                    .get_array_inner()
-                    .unwrap()
-                    .clone(), 
-                    context
+                    ptr,
+                    dtype.get_array_inner().unwrap().clone(),
+                    context,
                 )?;
                 for (i, initial_item) in izip!(lists).enumerate() {
                     match initial_item.node.initializer.node {
                         Initializer::List(_) => {
-                            let offset_bytes = self.get_rest_byte(
-                                dtype
-                                .get_array_inner()
-                                .unwrap()
-                                .clone()
-                            );
+                            let offset_bytes =
+                                self.get_rest_byte(dtype.get_array_inner().unwrap().clone());
                             let offset_bytes = offset_bytes * i;
                             if offset_bytes != 0 {
-                                let offset = context.insert_instruction(
-                                    ir::Instruction::BinOp {
+                                let offset =
+                                    context.insert_instruction(ir::Instruction::BinOp {
                                         op: BinaryOperator::Multiply,
-                                        lhs: ir::Operand::Constant(
-                                            ir::Constant::Int {
-                                                value: 4,
-                                                width: 64,
-                                                is_signed: true
-
-                                            }
-                                        ),
-                                        rhs: ir::Operand::Constant(
-                                            ir::Constant::Int {
-                                                value: offset_bytes as u128,
-                                                width: 64,
-                                                is_signed: true
-                                            }
-                                        ),
-                                        dtype: ir::Dtype::int(64)
-                                    }
-                                )?;
-                                let _unused = context.insert_instruction(
-                                    ir::Instruction::GetElementPtr {
+                                        lhs: ir::Operand::Constant(ir::Constant::Int {
+                                            value: 4,
+                                            width: 64,
+                                            is_signed: true,
+                                        }),
+                                        rhs: ir::Operand::Constant(ir::Constant::Int {
+                                            value: offset_bytes as u128,
+                                            width: 64,
+                                            is_signed: true,
+                                        }),
+                                        dtype: ir::Dtype::int(64),
+                                    })?;
+                                let _unused =
+                                    context.insert_instruction(ir::Instruction::GetElementPtr {
                                         ptr: ptr.clone(),
                                         offset,
-                                        dtype: ptr.dtype()
-                                    }
-                                )?;
+                                        dtype: ptr.dtype(),
+                                    })?;
                             }
 
-                            let _unused = self.list_initializer( &initial_item.node.initializer.node,
+                            let _unused = self.list_initializer(
+                                &initial_item.node.initializer.node,
                                 ptr.clone(),
-                                dtype
-                                .get_array_inner()
-                                .unwrap()
-                                .clone(), 
-                                context
+                                dtype.get_array_inner().unwrap().clone(),
+                                context,
                             )?;
                         }
                         Initializer::Expression(expr) => {
                             let offset = i;
-                            let offset = context.insert_instruction(
-                                ir::Instruction::BinOp {
-                                    op: BinaryOperator::Multiply,
-                                    lhs: ir::Operand::Constant(
-                                        ir::Constant::Int {
-                                            value: offset as u128,
-                                            width: 64,
-                                            is_signed: true
-                                        }
-                                    ),
-                                    rhs: ir::Operand::Constant(
-                                        ir::Constant::Int {
-                                            value: 4,
-                                            width: 64,
-                                            is_signed: true
-                                        }
-                                    ),
-                                    dtype: ir::Dtype::int(64) 
-                                }
-                            )?;
-                            let ptr = context.insert_instruction(
-                                ir::Instruction::GetElementPtr {
+                            let offset = context.insert_instruction(ir::Instruction::BinOp {
+                                op: BinaryOperator::Multiply,
+                                lhs: ir::Operand::Constant(ir::Constant::Int {
+                                    value: offset as u128,
+                                    width: 64,
+                                    is_signed: true,
+                                }),
+                                rhs: ir::Operand::Constant(ir::Constant::Int {
+                                    value: 4,
+                                    width: 64,
+                                    is_signed: true,
+                                }),
+                                dtype: ir::Dtype::int(64),
+                            })?;
+                            let ptr =
+                                context.insert_instruction(ir::Instruction::GetElementPtr {
                                     ptr: ptr.clone(),
                                     offset,
-                                    dtype: ptr.dtype()
-                                })?;
-                            
-                            let val = self.translate_expr_rvalue(&expr.node, context)?;
-                            let _unused = context.insert_instruction(
-                                ir::Instruction::Store {
-                                    ptr,
-                                    value: val
+                                    dtype: ptr.dtype(),
                                 })?;
 
+                            let val = self.translate_expr_rvalue(&expr.node, context)?;
+                            let _unused = context
+                                .insert_instruction(ir::Instruction::Store { ptr, value: val })?;
                         }
                     }
                 }
@@ -762,7 +857,7 @@ impl IrgenFunc<'_> {
             Initializer::Expression(_) => {
                 panic!("must be list")
             }
-        } 
+        }
     }
 
     // Translate Initializer to IR Instructions
@@ -775,17 +870,17 @@ impl IrgenFunc<'_> {
             Initializer::Expression(expr) => self.translate_expr_rvalue(&expr.node, context),
             Initializer::List(_initializers) => {
                 // for element in initializers {
-                    // let sub_initializer = element.node.initializer.node.clone();
-                    // match  sub_initializer {
-                        // Initializer::List(_) => {
-                            // self.translate_initializer(&sub_initializer, context)?;
-                        // }
-                        // Initializer::Expression(expr) => {
-                            // let value = self.translate_expr_rvalue(&expr.node, context)?;
+                // let sub_initializer = element.node.initializer.node.clone();
+                // match  sub_initializer {
+                // Initializer::List(_) => {
+                // self.translate_initializer(&sub_initializer, context)?;
+                // }
+                // Initializer::Expression(expr) => {
+                // let value = self.translate_expr_rvalue(&expr.node, context)?;
 
-                        // }
-                    // }
-                // } 
+                // }
+                // }
+                // }
                 // Ok(ir::Operand::Constant(ir::Constant::Unit{}))
                 todo!()
             }
@@ -798,7 +893,7 @@ impl IrgenFunc<'_> {
         var: String,
         dtype: ir::Dtype,
         value: Option<ir::Operand>,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         // Insert allocation
         let id = self.insert_alloc(Named::new(Some(var.clone()), dtype.clone()));
@@ -811,7 +906,7 @@ impl IrgenFunc<'_> {
 
         // Initialize allocated register if `value` is not `None`
         if let Some(value) = value {
-            // Implict type cast 
+            // Implict type cast
             let value = self.translate_typecast(value, dtype, context)?;
 
             return context.insert_instruction(ir::Instruction::Store { ptr, value });
@@ -821,42 +916,30 @@ impl IrgenFunc<'_> {
         Ok(ptr)
     }
 
-
     // Look up the symbol table
-    fn lookup_symbol_table(
-        &mut self,
-        name: &String
-    ) -> Result<ir::Operand, IrgenErrorMessage> {
+    fn lookup_symbol_table(&mut self, name: &String) -> Result<ir::Operand, IrgenErrorMessage> {
         for item in self.symbol_table.iter().rev() {
             if item.contains_key(name) {
-                return Ok(
-                    item.get(name).unwrap().clone()
-                )
+                return Ok(item.get(name).unwrap().clone());
             }
         }
 
-        Err(IrgenErrorMessage::Misc { 
-            message: "there is no entry for `$name`".to_string()
-         })
+        Err(IrgenErrorMessage::Misc {
+            message: "there is no entry for `$name`".to_string(),
+        })
     }
-
 
     fn conver_array_to_ponter(
         &mut self,
         ptr: ir::Operand,
         dtype: ir::Dtype,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
-        context.insert_instruction(
-            ir::Instruction::GetElementPtr {
-                ptr,
-                offset: ir::Operand::Constant(
-                    ir::Constant::int(0, ir::Dtype::INT)
-                ),
-                dtype: ir::Dtype::pointer(dtype)
-            }
-        )
-
+        context.insert_instruction(ir::Instruction::GetElementPtr {
+            ptr,
+            offset: ir::Operand::Constant(ir::Constant::int(0, ir::Dtype::INT)),
+            dtype: ir::Dtype::pointer(dtype),
+        })
     }
 
     /// Translate r-value Expression to IR instructions
@@ -877,11 +960,11 @@ impl IrgenFunc<'_> {
                 // When `ptr` pointer from identifier of which inner type represents
                 // `function` or `array` , return `ptr` without `load` instruction
                 if ptr_inner_type.get_function_inner().is_some() {
-                    return Ok(ptr)
+                    return Ok(ptr);
                 }
 
                 // let's say two declarations are `int a` and `int b[10]`, `a` and `b` represent
-                //`int *` and `[10 x i32]` respectively, when `a` is used as an r-value,, it's an 
+                //`int *` and `[10 x i32]` respectively, when `a` is used as an r-value,, it's an
                 // integer value from `int*` by `load` instruction. On the other hand, when `b` is
                 // used as an r-value, it's interpreted as an integer pointer that will be indexed.
                 if let Some(array_inner) = ptr_inner_type.get_array_inner() {
@@ -889,8 +972,12 @@ impl IrgenFunc<'_> {
                     return self.conver_array_to_ponter(ptr, array_inner.clone(), context);
                 }
 
-                context.insert_instruction(ir::Instruction::Load { ptr })
+                let _unused = match ptr_inner_type {
+                    &ir::Dtype::Struct { .. } => return Ok(ptr),
+                    _ => (),
+                };
 
+                context.insert_instruction(ir::Instruction::Load { ptr })
             }
             Expression::Constant(constant) => {
                 let constant = ir::Constant::try_from(&constant.node)
@@ -899,19 +986,19 @@ impl IrgenFunc<'_> {
                 Ok(ir::Operand::constant(constant))
             }
             Expression::StringLiteral(_string_lit) => todo!(),
-            Expression::Member(_member) => todo!(),
+            Expression::Member(member) => self.translate_member(true, &member.node, context),
             Expression::Call(call) => self.translate_func_call(&call.node, context),
             Expression::SizeOfTy(type_name) => {
                 let dtype = ir::Dtype::try_from(&type_name.node.0.node)
                     .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
                 let (size_of, _) = dtype
                     .size_align_of(self.structs)
-                    .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error:e })?;
+                    .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
                 // `is_signed` must be `false` in the future
                 Ok(ir::Operand::constant(ir::Constant::int(
                     size_of as u128,
-                    ir::Dtype::LONG
+                    ir::Dtype::LONG,
                 )))
             }
             Expression::SizeOfVal(var) => {
@@ -919,12 +1006,11 @@ impl IrgenFunc<'_> {
 
                 let (size_of, _) = dtype
                     .size_align_of(self.structs)
-                    .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error:e })?;
+                    .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
                 Ok(ir::Operand::constant(ir::Constant::int(
                     size_of as u128,
-                    ir::Dtype::LONG
+                    ir::Dtype::LONG,
                 )))
-
             }
             Expression::AlignOf(type_name) => {
                 let dtype = ir::Dtype::try_from(&type_name.node.0.node)
@@ -937,10 +1023,8 @@ impl IrgenFunc<'_> {
                 Ok(ir::Operand::constant(ir::Constant::Int {
                     value: align_of as u128,
                     width: 8 * ir::Dtype::SIZE_OF_LONG,
-                    is_signed: false
-                }
-                ))
-
+                    is_signed: false,
+                }))
             }
 
             Expression::UnaryOperator(unary) => self.translate_unary_op(&unary.node, context),
@@ -968,14 +1052,100 @@ impl IrgenFunc<'_> {
 
             Expression::Comma(exprs) => self.translate_comma(&exprs, context),
             _ => panic!("`is unsupported`"),
-
-        } 
+        }
     }
 
-    fn get_expr_type(
+    fn translate_member(
         &mut self,
-        expr: Expression
-    ) -> Result<ir::Dtype, IrgenErrorMessage> {
+        is_rvalue: bool,
+        member: &MemberExpression,
+        context: &mut Context,
+    ) -> Result<ir::Operand, IrgenErrorMessage> {
+        let mut ptr;
+        match &member.expression.node {
+            Expression::Member(expr) => {
+                ptr = self.translate_member(false, &expr.node, context)?;
+            }
+            _ => {
+                ptr = self.translate_expr_rvalue(&member.expression.node, context)?;
+            }
+        }
+
+        match &member.expression.node {
+            Expression::Call(_) => {
+                // Allocates at stack.
+                let var = self.alloc_tempid();
+                let _unused = self.translate_alloc(
+                    var.clone(),
+                    ptr.dtype().clone(),
+                    Some(ptr.clone()),
+                    context,
+                )?;
+                ptr = self.lookup_symbol_table(&var)?;
+            }
+            _ => {}
+        }
+        let member_name = member.identifier.node.name.clone();
+        let offset: usize;
+        let dtype: ir::Dtype;
+        if let Some(inner) = &ptr.dtype().get_pointer_inner() {
+            (offset, dtype) = inner
+                .get_offset_struct_field(&member_name, self.structs)
+                .unwrap();
+        } else {
+            (offset, dtype) = ptr
+                .dtype()
+                .get_offset_struct_field(&member_name, self.structs)
+                .unwrap();
+        }
+
+        match member.operator.node {
+            MemberOperator::Direct => {
+                let mut val = context.insert_instruction(ir::Instruction::GetElementPtr {
+                    ptr: ptr.clone(),
+                    offset: ir::Operand::Constant(ir::Constant::Int {
+                        value: offset as u128,
+                        width: 64,
+                        is_signed: true,
+                    }),
+                    dtype: ir::Dtype::pointer(dtype.clone()),
+                })?;
+                if let ir::Dtype::Array { inner, .. } = dtype.clone() {
+                    val = self.conver_array_to_ponter(val, inner.deref().clone(), context)?;
+                }
+                if is_rvalue {
+                    if dtype.get_array_inner().is_some() {
+                        return Ok(val);
+                    }
+                    return context.insert_instruction(ir::Instruction::Load { ptr: val });
+                }
+                Ok(val)
+            }
+            MemberOperator::Indirect => {
+                let mut val = context.insert_instruction(ir::Instruction::GetElementPtr {
+                    ptr: ptr.clone(),
+                    offset: ir::Operand::Constant(ir::Constant::Int {
+                        value: offset as u128,
+                        width: 64,
+                        is_signed: true,
+                    }),
+                    dtype: ir::Dtype::pointer(dtype.clone()),
+                })?;
+                if let ir::Dtype::Array { inner, .. } = dtype.clone() {
+                    val = self.conver_array_to_ponter(val, inner.deref().clone(), context)?;
+                }
+                if is_rvalue {
+                    if dtype.get_array_inner().is_some() {
+                        return Ok(val);
+                    }
+                    return context.insert_instruction(ir::Instruction::Load { ptr: val });
+                }
+                Ok(val)
+            }
+        }
+    }
+
+    fn get_expr_type(&mut self, expr: Expression) -> Result<ir::Dtype, IrgenErrorMessage> {
         match expr {
             Expression::Identifier(identifier) => {
                 let ptr = self.lookup_symbol_table(&identifier.node.name)?;
@@ -997,21 +1167,20 @@ impl IrgenFunc<'_> {
             Expression::Call(call) => {
                 let dtype = self.get_expr_type(call.node.callee.node)?;
                 if let Some(rtype) = dtype.get_function_inner() {
-                    return Ok(rtype.0.clone())
+                    return Ok(rtype.0.clone());
                 }
-                Err(IrgenErrorMessage::Misc { message: "should be function inner".to_string() })
-
+                Err(IrgenErrorMessage::Misc {
+                    message: "should be function inner".to_string(),
+                })
             }
             Expression::SizeOfTy(type_name) => {
                 let dtype = ir::Dtype::try_from(&type_name.node.0.node)
                     .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
                 Ok(dtype)
-
             }
             Expression::SizeOfVal(var) => {
                 let dtype = self.get_expr_type(var.node.0.node)?;
                 Ok(dtype)
-
             }
             Expression::AlignOf(type_name) => {
                 let dtype = ir::Dtype::try_from(&type_name.node.0.node)
@@ -1019,16 +1188,10 @@ impl IrgenFunc<'_> {
                 Ok(dtype)
             }
 
-            Expression::UnaryOperator(unary) => {
-                match unary.node.operator.node {
-                    UnaryOperator::Address => {
-                        Ok(ir::Dtype::pointer(ir::Dtype::default()))
-                    }
-                    _ => {
-                        self.get_expr_type(unary.node.operand.node)
-                    } 
-                }
-            }
+            Expression::UnaryOperator(unary) => match unary.node.operator.node {
+                UnaryOperator::Address => Ok(ir::Dtype::pointer(ir::Dtype::default())),
+                _ => self.get_expr_type(unary.node.operand.node),
+            },
             Expression::Cast(cast) => {
                 let target_dtype = ir::Dtype::try_from(&cast.node.type_name.node)
                     .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
@@ -1044,26 +1207,19 @@ impl IrgenFunc<'_> {
                 let rhs_type = self.get_expr_type(binary.node.rhs.node)?;
                 let dtype = self.merge_dtype(lhs_type, rhs_type)?;
                 Ok(dtype)
-            },
+            }
             Expression::Conditional(conditional) => {
                 let lhs_type = self.get_expr_type(conditional.node.then_expression.node)?;
                 let rhs_type = self.get_expr_type(conditional.node.else_expression.node)?;
                 let dtype = self.merge_dtype(lhs_type, rhs_type)?;
                 Ok(dtype)
-                
             }
 
-            Expression::Comma(exprs) => self.get_expr_type(
-                exprs
-                    .deref()
-                    .clone()
-                    .pop()
-                    .unwrap()
-                    .node
-                    ),
+            Expression::Comma(exprs) => {
+                self.get_expr_type(exprs.deref().clone().pop().unwrap().node)
+            }
             _ => panic!("`is unsupported`"),
-
-        }  
+        }
     }
 
     /// Translate unary expression
@@ -1077,91 +1233,91 @@ impl IrgenFunc<'_> {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
 
                 let ptr = self.translate_expr_lvalue(&expr.operand.node, context)?;
-                let value :ir::Operand;
+                let value: ir::Operand;
                 match val.dtype() {
-                    ir::Dtype::Int { width, is_signed,.. } => {
-                        value = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Minus,
-                        lhs: val.clone(), 
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::Int {
+                    ir::Dtype::Int {
+                        width, is_signed, ..
+                    } => {
+                        value = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Minus,
+                            lhs: val.clone(),
+                            rhs: ir::Operand::Constant(ir::Constant::Int {
                                 value: 1,
                                 width,
                                 is_signed,
-                            }
-                        ),
-                        dtype: val.dtype()
+                            }),
+                            dtype: val.dtype(),
                         })?;
-
                     }
                     ir::Dtype::Pointer { .. } => {
-                        let offset = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Multiply,
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::int(u128::MAX, ir::Dtype::int(64))
-                        ),
-                        lhs: ir::Operand::Constant(
-                            ir::Constant::int(4, ir::Dtype::int(64))
-                        ),
-                        dtype: ir::Dtype::Int { width: 64, is_signed: true, is_const: false }
+                        let offset = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Multiply,
+                            rhs: ir::Operand::Constant(ir::Constant::int(
+                                u128::MAX,
+                                ir::Dtype::int(64),
+                            )),
+                            lhs: ir::Operand::Constant(ir::Constant::int(4, ir::Dtype::int(64))),
+                            dtype: ir::Dtype::Int {
+                                width: 64,
+                                is_signed: true,
+                                is_const: false,
+                            },
                         })?;
 
                         value = context.insert_instruction(ir::Instruction::GetElementPtr {
                             ptr: val.clone(),
                             offset,
-                            dtype: val.dtype()
+                            dtype: val.dtype(),
                         })?;
                     }
-                    _ => panic!("only int and pointer")
+                    _ => panic!("only int and pointer"),
                 }
-                let _unused = context.insert_instruction(ir::Instruction::Store {
-                    ptr,
-                    value,
-                })?;
+                let _unused = context.insert_instruction(ir::Instruction::Store { ptr, value })?;
 
                 Ok(val)
-                 
             }
             UnaryOperator::PreDecrement => {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
 
                 let ptr = self.translate_expr_lvalue(&expr.operand.node, context)?;
-                let value :ir::Operand;
+                let value: ir::Operand;
                 match val.dtype() {
-                    ir::Dtype::Int { width, is_signed,.. } => {
-                        value = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Minus,
-                        lhs: val.clone(), 
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::Int {
+                    ir::Dtype::Int {
+                        width, is_signed, ..
+                    } => {
+                        value = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Minus,
+                            lhs: val.clone(),
+                            rhs: ir::Operand::Constant(ir::Constant::Int {
                                 value: 1,
                                 width,
                                 is_signed,
-                            }
-                        ),
-                        dtype: val.dtype()
+                            }),
+                            dtype: val.dtype(),
                         })?;
-
                     }
                     ir::Dtype::Pointer { .. } => {
-                        let offset = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Multiply,
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::int(u128::MAX, ir::Dtype::int(64))
-                        ),
-                        lhs: ir::Operand::Constant(
-                            ir::Constant::int(4, ir::Dtype::int(64))
-                        ),
-                        dtype: ir::Dtype::Int { width: 64, is_signed: true, is_const: false }
+                        let offset = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Multiply,
+                            rhs: ir::Operand::Constant(ir::Constant::int(
+                                u128::MAX,
+                                ir::Dtype::int(64),
+                            )),
+                            lhs: ir::Operand::Constant(ir::Constant::int(4, ir::Dtype::int(64))),
+                            dtype: ir::Dtype::Int {
+                                width: 64,
+                                is_signed: true,
+                                is_const: false,
+                            },
                         })?;
 
                         value = context.insert_instruction(ir::Instruction::GetElementPtr {
                             ptr: val.clone(),
                             offset,
-                            dtype: val.dtype()
+                            dtype: val.dtype(),
                         })?;
                     }
-                    _ => panic!("only int and pointer")
+                    _ => panic!("only int and pointer"),
                 }
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1169,49 +1325,47 @@ impl IrgenFunc<'_> {
                 })?;
 
                 Ok(value)
-
             }
             UnaryOperator::PostIncrement => {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
 
                 let ptr = self.translate_expr_lvalue(&expr.operand.node, context)?;
 
-                let value :ir::Operand;
+                let value: ir::Operand;
                 match val.dtype() {
-                    ir::Dtype::Int { width, is_signed,.. } => {
-                        value = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Plus,
-                        lhs: val.clone(), 
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::Int {
+                    ir::Dtype::Int {
+                        width, is_signed, ..
+                    } => {
+                        value = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Plus,
+                            lhs: val.clone(),
+                            rhs: ir::Operand::Constant(ir::Constant::Int {
                                 value: 1,
                                 width,
                                 is_signed,
-                            }
-                        ),
-                        dtype: val.dtype()
+                            }),
+                            dtype: val.dtype(),
                         })?;
-
                     }
                     ir::Dtype::Pointer { .. } => {
-                        let offset = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Multiply,
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::int(1, ir::Dtype::int(64))
-                        ),
-                        lhs: ir::Operand::Constant(
-                            ir::Constant::int(4, ir::Dtype::int(64))
-                        ),
-                        dtype: ir::Dtype::Int { width: 64, is_signed: true, is_const: false }
+                        let offset = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Multiply,
+                            rhs: ir::Operand::Constant(ir::Constant::int(1, ir::Dtype::int(64))),
+                            lhs: ir::Operand::Constant(ir::Constant::int(4, ir::Dtype::int(64))),
+                            dtype: ir::Dtype::Int {
+                                width: 64,
+                                is_signed: true,
+                                is_const: false,
+                            },
                         })?;
 
                         value = context.insert_instruction(ir::Instruction::GetElementPtr {
                             ptr: val.clone(),
                             offset,
-                            dtype: val.dtype()
+                            dtype: val.dtype(),
                         })?;
                     }
-                    _ => panic!("only int and pointer")
+                    _ => panic!("only int and pointer"),
                 }
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1219,7 +1373,6 @@ impl IrgenFunc<'_> {
                 })?;
 
                 Ok(val)
-
             }
             UnaryOperator::PreIncrement => {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
@@ -1227,40 +1380,39 @@ impl IrgenFunc<'_> {
                 let ptr = self.translate_expr_lvalue(&expr.operand.node, context)?;
                 let value: ir::Operand;
                 match val.dtype() {
-                    ir::Dtype::Int { width, is_signed,.. } => {
-                        value = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Plus,
-                        lhs: val.clone(), 
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::Int {
+                    ir::Dtype::Int {
+                        width, is_signed, ..
+                    } => {
+                        value = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Plus,
+                            lhs: val.clone(),
+                            rhs: ir::Operand::Constant(ir::Constant::Int {
                                 value: 1,
                                 width,
                                 is_signed,
-                            }
-                        ),
-                        dtype: val.dtype()
+                            }),
+                            dtype: val.dtype(),
                         })?;
-
                     }
                     ir::Dtype::Pointer { .. } => {
-                        let offset = context.insert_instruction(ir::Instruction::BinOp { 
-                        op: BinaryOperator::Multiply,
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::int(1, ir::Dtype::int(64))
-                        ),
-                        lhs: ir::Operand::Constant(
-                            ir::Constant::int(4, ir::Dtype::int(64))
-                        ),
-                        dtype: ir::Dtype::Int { width: 64, is_signed: true, is_const: false }
+                        let offset = context.insert_instruction(ir::Instruction::BinOp {
+                            op: BinaryOperator::Multiply,
+                            rhs: ir::Operand::Constant(ir::Constant::int(1, ir::Dtype::int(64))),
+                            lhs: ir::Operand::Constant(ir::Constant::int(4, ir::Dtype::int(64))),
+                            dtype: ir::Dtype::Int {
+                                width: 64,
+                                is_signed: true,
+                                is_const: false,
+                            },
                         })?;
 
                         value = context.insert_instruction(ir::Instruction::GetElementPtr {
                             ptr: val.clone(),
                             offset,
-                            dtype: val.dtype()
+                            dtype: val.dtype(),
                         })?;
                     }
-                    _ => panic!("only int and pointer")
+                    _ => panic!("only int and pointer"),
                 }
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1268,83 +1420,65 @@ impl IrgenFunc<'_> {
                 })?;
 
                 Ok(value)
-
             }
             UnaryOperator::Minus => {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
 
-                let value = context.insert_instruction(ir::Instruction::UnaryOp { 
+                let value = context.insert_instruction(ir::Instruction::UnaryOp {
                     op: UnaryOperator::Minus,
                     operand: val.clone(),
-                    dtype: val.dtype()
+                    dtype: val.dtype(),
                 })?;
                 Ok(value)
-
             }
             UnaryOperator::Plus => {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
 
-                let value = context.insert_instruction(ir::Instruction::UnaryOp { 
+                let value = context.insert_instruction(ir::Instruction::UnaryOp {
                     op: UnaryOperator::Plus,
                     operand: val.clone(),
-                    dtype: val.dtype()
+                    dtype: val.dtype(),
                 })?;
                 Ok(value)
-
-
             }
             UnaryOperator::Negate => {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
-                match val.dtype() {
-                    ir::Dtype::Int { width,.. } => {
-                        if width == 1 {
-                            let value = context.insert_instruction(ir::Instruction::UnaryOp { 
-                                op: UnaryOperator::Negate,
-                                operand: val.clone(),
-                                dtype: val.dtype()
-                            })?;
-                            return Ok(value)
-
-                        }
-                        Ok(val)
-                    }
-                    _ => {
-                        todo!()
-                    }
-                }
-
+                let val = self.translate_typecast_to_bool(val, context)?;
+                context.insert_instruction(ir::Instruction::UnaryOp {
+                    op: UnaryOperator::Negate,
+                    operand: val.clone(),
+                    dtype: val.dtype(),
+                })
             }
             UnaryOperator::Complement => {
-                let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = self.translate_expr_rvalue(&expr.operand.node, context)?;
+                let minus1 = ir::Operand::Constant(ir::Constant::Int {
+                    value: u128::MAX,
+                    width: value.dtype().get_int_width().unwrap(),
+                    is_signed: true,
+                });
+
+                let merged_type = self.merge_dtype(value.dtype(), minus1.dtype())?;
+                let lhs = self.translate_typecast(value, merged_type.clone(), context)?;
+                let rhs = self.translate_typecast(minus1, merged_type.clone(), context)?;
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::BitwiseXor,
-                    lhs: val.clone(), 
-                    rhs: ir::Operand::Constant(
-                        ir::Constant::Int {
-                            value: u128::MAX,
-                            width: val.dtype().get_int_width().unwrap(),
-                            is_signed: true
-                        }
-                    ),
-                    dtype: val.dtype()
+                    lhs,
+                    rhs,
+                    dtype: merged_type,
                 })?;
+
                 Ok(value)
             }
-
             UnaryOperator::Address => {
                 let val = self.translate_expr_lvalue(&expr.operand.node, context)?;
-                
+
                 Ok(val)
             }
             UnaryOperator::Indirection => {
                 let val = self.translate_expr_rvalue(&expr.operand.node, context)?;
-                context.insert_instruction(
-                    ir::Instruction::Load {
-                        ptr: val
-                    }
-                )
+                context.insert_instruction(ir::Instruction::Load { ptr: val })
             }
-
         }
     }
 
@@ -1358,21 +1492,19 @@ impl IrgenFunc<'_> {
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         match opt {
             BinaryOperator::Assign => {
-
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
                 let val_rhs = self.translate_expr_rvalue(rhs, context)?;
                 let val_rhs = self.translate_typecast(
                     val_rhs.clone(),
                     ptr.dtype().get_pointer_inner().unwrap().clone(),
-                    context
+                    context,
                 )?;
 
-
-                let _unused = context.insert_instruction(ir::Instruction::Store { 
-                    ptr, value: val_rhs.clone()
+                let _unused = context.insert_instruction(ir::Instruction::Store {
+                    ptr,
+                    value: val_rhs.clone(),
                 })?;
                 Ok(val_rhs)
-
             }
             BinaryOperator::AssignBitwiseAnd => {
                 let val_lhs = self.translate_expr_rvalue(lhs, context)?;
@@ -1380,15 +1512,15 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::BitwiseAnd,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
-                    value: value.clone()
+                    value: value.clone(),
                 })?;
                 Ok(value)
             }
@@ -1398,18 +1530,17 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::BitwiseOr,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
                     value: value.clone(),
                 })?;
                 Ok(value)
-
             }
             BinaryOperator::AssignBitwiseXor => {
                 let val_lhs = self.translate_expr_rvalue(lhs, context)?;
@@ -1417,11 +1548,11 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::BitwiseXor,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1435,18 +1566,17 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Divide,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
                     value: value.clone(),
                 })?;
                 Ok(value)
-
             }
             BinaryOperator::AssignMinus => {
                 let val_lhs = self.translate_expr_rvalue(lhs, context)?;
@@ -1454,11 +1584,11 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Minus,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1472,11 +1602,11 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Modulo,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1490,18 +1620,17 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Multiply,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
                     value: value.clone(),
                 })?;
                 Ok(value)
-
             }
             BinaryOperator::AssignPlus => {
                 let val_lhs = self.translate_expr_rvalue(lhs, context)?;
@@ -1509,18 +1638,17 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Plus,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
                     value: value.clone(),
                 })?;
                 Ok(value)
-
             }
             BinaryOperator::AssignShiftLeft => {
                 let val_lhs = self.translate_expr_rvalue(lhs, context)?;
@@ -1528,11 +1656,11 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::ShiftLeft,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1546,11 +1674,11 @@ impl IrgenFunc<'_> {
                 let val_rhs = self.translate_typecast(val_rhs, val_lhs.dtype(), context)?;
 
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
-                let value = context.insert_instruction(ir::Instruction::BinOp { 
+                let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::ShiftRight,
-                    lhs: val_lhs.clone(), 
-                    rhs: val_rhs.clone(), 
-                    dtype: val_lhs.dtype()
+                    lhs: val_lhs.clone(),
+                    rhs: val_rhs.clone(),
+                    dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
@@ -1559,30 +1687,26 @@ impl IrgenFunc<'_> {
                 Ok(value)
             }
             BinaryOperator::Equals
-            | BinaryOperator::Greater 
+            | BinaryOperator::Greater
             | BinaryOperator::GreaterOrEqual
             | BinaryOperator::Less
             | BinaryOperator::LessOrEqual
-            | BinaryOperator::NotEquals=> {
+            | BinaryOperator::NotEquals => {
                 let val_lhs = self.translate_expr_rvalue(lhs, context)?;
                 let val_rhs = self.translate_expr_rvalue(rhs, context)?;
-                let dtype = self.merge_dtype(
-                    val_lhs.dtype(),
-                    val_rhs.dtype()
-                )?;
+                let dtype = self.merge_dtype(val_lhs.dtype(), val_rhs.dtype())?;
 
                 let val_lhs = self.translate_typecast(val_lhs, dtype.clone(), context)?;
                 let val_rhs = self.translate_typecast(val_rhs, dtype.clone(), context)?;
-                context.insert_instruction(
-                    ir::Instruction::BinOp {
-                        op: opt,
-                        lhs: val_lhs,
-                        rhs: val_rhs,
-                        dtype: ir::Dtype::Int {
-                            width: 1,
-                            is_signed: false,
-                            is_const: false,
-                        }
+                context.insert_instruction(ir::Instruction::BinOp {
+                    op: opt,
+                    lhs: val_lhs,
+                    rhs: val_rhs,
+                    dtype: ir::Dtype::Int {
+                        width: 1,
+                        is_signed: false,
+                        is_const: false,
+                    },
                 })
             }
             BinaryOperator::Multiply
@@ -1597,29 +1721,23 @@ impl IrgenFunc<'_> {
             | BinaryOperator::BitwiseXor => {
                 let val_lhs = self.translate_expr_rvalue(lhs, context)?;
                 let val_rhs = self.translate_expr_rvalue(rhs, context)?;
-                let dtype = self.merge_dtype(
-                    val_lhs.dtype(),
-                    val_rhs.dtype()
-                )?;
+                let dtype = self.merge_dtype(val_lhs.dtype(), val_rhs.dtype())?;
 
                 let val_lhs = self.translate_typecast(val_lhs, dtype.clone(), context)?;
                 let val_rhs = self.translate_typecast(val_rhs, dtype.clone(), context)?;
-                context.insert_instruction(
-                    ir::Instruction::BinOp {
-                        op: opt,
-                        lhs: val_lhs,
-                        rhs: val_rhs,
-                        dtype,
+                context.insert_instruction(ir::Instruction::BinOp {
+                    op: opt,
+                    lhs: val_lhs,
+                    rhs: val_rhs,
+                    dtype,
                 })
-
-            } 
+            }
 
             BinaryOperator::LogicalAnd => {
                 let bid_second = self.alloc_bid();
                 let bid_temp = self.alloc_bid();
                 let bid_end = self.alloc_bid();
 
-
                 let _unused = self.translate_condition(
                     lhs,
                     mem::replace(context, Context::new(bid_end)),
@@ -1628,17 +1746,12 @@ impl IrgenFunc<'_> {
                 )?;
 
                 let mut context_second = Context::new(bid_second);
-                let val_second = 
-                    self.translate_expr_rvalue(rhs, &mut context_second)?;
+                let val_second = self.translate_expr_rvalue(rhs, &mut context_second)?;
 
-                let val_second = 
+                let val_second =
                     self.translate_typecast_to_bool(val_second, &mut context_second)?;
 
-
-
-
                 let mut context_temp = Context::new(bid_temp);
-
 
                 // Allocate at stack
                 let var = self.alloc_tempid();
@@ -1650,57 +1763,46 @@ impl IrgenFunc<'_> {
                         is_const: false,
                     },
                     None,
-                    context
+                    context,
                 )?;
 
                 // Finish the second branch
-                let _unused = context_second.insert_instruction(
-                    ir::Instruction::Store {
-                        ptr: ptr.clone(),
-                        value: val_second,
-                    }
-                )?;
+                let _unused = context_second.insert_instruction(ir::Instruction::Store {
+                    ptr: ptr.clone(),
+                    value: val_second,
+                })?;
 
                 self.insert_block(
                     context_second,
                     ir::BlockExit::Jump {
-                        arg: ir::JumpArg::new(bid_end, Vec::new())
-                    }
+                        arg: ir::JumpArg::new(bid_end, Vec::new()),
+                    },
                 );
 
                 // Finish the temp branch
-                let _unused = context_temp.insert_instruction(
-                    ir::Instruction::Store {
-                        ptr: ptr.clone(),
-                        value: ir::Operand::Constant(ir::Constant::Int {
-                            value: 0,
-                            width: 1,
-                            is_signed: false
-                        }),
-                    }
-                )?;
+                let _unused = context_temp.insert_instruction(ir::Instruction::Store {
+                    ptr: ptr.clone(),
+                    value: ir::Operand::Constant(ir::Constant::Int {
+                        value: 0,
+                        width: 1,
+                        is_signed: false,
+                    }),
+                })?;
 
                 self.insert_block(
                     context_temp,
                     ir::BlockExit::Jump {
-                        arg: ir::JumpArg::new(bid_end, Vec::new())
-                    }
+                        arg: ir::JumpArg::new(bid_end, Vec::new()),
+                    },
                 );
 
-
                 context.insert_instruction(ir::Instruction::Load { ptr })
-
-
-
-
-
             }
             BinaryOperator::LogicalOr => {
                 let bid_second = self.alloc_bid();
                 let bid_temp = self.alloc_bid();
                 let bid_end = self.alloc_bid();
 
-
                 let _unused = self.translate_condition(
                     lhs,
                     mem::replace(context, Context::new(bid_end)),
@@ -1709,16 +1811,12 @@ impl IrgenFunc<'_> {
                 )?;
 
                 let mut context_second = Context::new(bid_second);
-                let val_second = 
-                    self.translate_expr_rvalue(rhs, &mut context_second)?;
+                let val_second = self.translate_expr_rvalue(rhs, &mut context_second)?;
 
-                let val_second = 
+                let val_second =
                     self.translate_typecast_to_bool(val_second, &mut context_second)?;
 
-
-
                 let mut context_temp = Context::new(bid_temp);
-
 
                 // Allocate at stack
                 let var = self.alloc_tempid();
@@ -1730,135 +1828,104 @@ impl IrgenFunc<'_> {
                         is_const: false,
                     },
                     None,
-                    context
+                    context,
                 )?;
 
                 // Finish the second branch
-                let _unused = context_second.insert_instruction(
-                    ir::Instruction::Store {
-                        ptr: ptr.clone(),
-                        value: val_second,
-                    }
-                )?;
+                let _unused = context_second.insert_instruction(ir::Instruction::Store {
+                    ptr: ptr.clone(),
+                    value: val_second,
+                })?;
 
                 self.insert_block(
                     context_second,
                     ir::BlockExit::Jump {
-                        arg: ir::JumpArg::new(bid_end, Vec::new())
-                    }
+                        arg: ir::JumpArg::new(bid_end, Vec::new()),
+                    },
                 );
 
                 // Finish the temp branch
-                let _unused = context_temp.insert_instruction(
-                    ir::Instruction::Store {
-                        ptr: ptr.clone(),
-                        value: ir::Operand::Constant(ir::Constant::Int {
-                            value: 1,
-                            width: 1,
-                            is_signed: false
-                        }),
-                    }
-                )?;
+                let _unused = context_temp.insert_instruction(ir::Instruction::Store {
+                    ptr: ptr.clone(),
+                    value: ir::Operand::Constant(ir::Constant::Int {
+                        value: 1,
+                        width: 1,
+                        is_signed: false,
+                    }),
+                })?;
 
                 self.insert_block(
                     context_temp,
                     ir::BlockExit::Jump {
-                        arg: ir::JumpArg::new(bid_end, Vec::new())
-                    }
+                        arg: ir::JumpArg::new(bid_end, Vec::new()),
+                    },
                 );
 
                 context.insert_instruction(ir::Instruction::Load { ptr })
-
-
-
             }
             BinaryOperator::Index => {
                 let index = self.translate_expr_rvalue(rhs, context)?;
                 let ptr_add = self.translate_expr_rvalue(lhs, context)?;
-                let index = self.translate_typecast(
-                    index,
-                    ir::Dtype::int(64),
-                    context
-                )?;
+                let index = self.translate_typecast(index, ir::Dtype::int(64), context)?;
 
+                let rest_elements =
+                    self.get_rest_byte(ptr_add.dtype().get_pointer_inner().unwrap().clone());
 
-                let rest_bytes = self.get_rest_byte(
-                    ptr_add
-                    .dtype()
-                    .get_pointer_inner()
-                    .unwrap()
-                    .clone()
-                );
-                 
-                let offset = context.insert_instruction(
-                    ir::Instruction::BinOp {
-                        op: BinaryOperator::Multiply,
-                        lhs: index.clone(),
-                        rhs: ir::Operand::Constant(
-                            ir::Constant::int(4 * (rest_bytes as u128), index.dtype())
+                let inner_type = self.get_inner_type(&ptr_add.dtype())?;
 
-                        ),
-                        dtype: index.dtype()
-                    }
-                )?;
+                let (sizeof, _) = inner_type.size_align_of(self.structs).unwrap();
+                let offset = context.insert_instruction(ir::Instruction::BinOp {
+                    op: BinaryOperator::Multiply,
+                    lhs: index.clone(),
+                    rhs: ir::Operand::Constant(ir::Constant::int(
+                        (sizeof * rest_elements) as u128,
+                        index.dtype(),
+                    )),
+                    dtype: index.dtype(),
+                })?;
 
-                let ptr_add = context.insert_instruction(
-                    ir::Instruction::GetElementPtr {
-                        ptr: ptr_add.clone(),
-                        offset,
-                        dtype: ptr_add.dtype()
-                    }
-                )?;
+                let ptr_add = context.insert_instruction(ir::Instruction::GetElementPtr {
+                    ptr: ptr_add.clone(),
+                    offset,
+                    dtype: ptr_add.dtype(),
+                })?;
 
                 match ptr_add.dtype().get_pointer_inner().unwrap().clone() {
-                    ir::Dtype::Array { inner , .. } => {
-                        context.insert_instruction(
-                            ir::Instruction::GetElementPtr {
-                                ptr: ptr_add.clone(),
-                                offset: ir::Operand::Constant(
-                                    ir::Constant::int(
-                                        0,
-                                        ir::Dtype::INT)) ,
-                                dtype: ir::Dtype::pointer(inner.deref().clone())
-                            }
-                        )
-
+                    ir::Dtype::Array { inner, .. } => {
+                        context.insert_instruction(ir::Instruction::GetElementPtr {
+                            ptr: ptr_add.clone(),
+                            offset: ir::Operand::Constant(ir::Constant::int(0, ir::Dtype::INT)),
+                            dtype: ir::Dtype::pointer(inner.deref().clone()),
+                        })
                     }
-                    _ => {
-                        context.insert_instruction(
-                            ir::Instruction::Load {
-                                ptr: ptr_add
-                            }
-                        )
-
-                    }
-
+                    _ => context.insert_instruction(ir::Instruction::Load { ptr: ptr_add }),
                 }
             }
-        
-            
         }
-
     }
 
-    fn get_rest_byte(
-        &mut self,
-        dtype: ir::Dtype
-    ) -> usize {
+    fn get_inner_type(&mut self, dtype: &ir::Dtype) -> Result<ir::Dtype, IrgenErrorMessage> {
         match dtype.clone() {
-            ir::Dtype::Array {  size , .. } => {
+            ir::Dtype::Array { inner, .. } => self.get_inner_type(&inner),
+            ir::Dtype::Pointer { inner, .. } => self.get_inner_type(&inner),
+            _ => Ok(dtype.clone()),
+        }
+    }
+
+    fn get_rest_byte(&mut self, dtype: ir::Dtype) -> usize {
+        match dtype.clone() {
+            ir::Dtype::Array { size, .. } => {
                 self.get_rest_byte(dtype.get_array_inner().unwrap().clone()) * size
             }
-            _ => 1
+            _ => 1,
         }
     }
-
 
     // Translate conditional expression to IR instructions
     fn translate_conditional(
         &mut self,
         conditional_expr: &ConditionalExpression,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         let bid_then = self.alloc_bid();
         let bid_else = self.alloc_bid();
@@ -1874,25 +1941,23 @@ impl IrgenFunc<'_> {
         // Translates the then branch
         let mut context_then = Context::new(bid_then);
 
-        let val_then = 
+        let val_then =
             self.translate_expr_rvalue(&conditional_expr.then_expression.node, &mut context_then)?;
 
         // Translates the else branch
         let mut context_else = Context::new(bid_else);
-        let val_else = 
+        let val_else =
             self.translate_expr_rvalue(&conditional_expr.else_expression.node, &mut context_else)?;
 
-
         let merged_dtype = self.merge_dtype(val_then.dtype(), val_else.dtype())?;
-        let val_then = 
+        let val_then =
             self.translate_typecast(val_then, merged_dtype.clone(), &mut context_then)?;
-        let val_else = 
+        let val_else =
             self.translate_typecast(val_else, merged_dtype.clone(), &mut context_else)?;
 
         // Allocates at stack.
         let var = self.alloc_tempid();
         let ptr = self.translate_alloc(var, merged_dtype, None, context)?;
-
 
         // Finished the then branch
         let _unused = context_then.insert_instruction(ir::Instruction::Store {
@@ -1903,10 +1968,9 @@ impl IrgenFunc<'_> {
         self.insert_block(
             context_then,
             ir::BlockExit::Jump {
-                arg: ir::JumpArg::new(bid_end, Vec::new())
-            }
+                arg: ir::JumpArg::new(bid_end, Vec::new()),
+            },
         );
-
 
         // Finished the else branch
         let _unused = context_else.insert_instruction(ir::Instruction::Store {
@@ -1917,14 +1981,12 @@ impl IrgenFunc<'_> {
         self.insert_block(
             context_else,
             ir::BlockExit::Jump {
-                arg: ir::JumpArg::new(bid_end, Vec::new())
-            }
+                arg: ir::JumpArg::new(bid_end, Vec::new()),
+            },
         );
-        
+
         context.insert_instruction(ir::Instruction::Load { ptr })
-
     }
-
 
     fn merge_dtype(
         &mut self,
@@ -1932,100 +1994,98 @@ impl IrgenFunc<'_> {
         rhs: ir::Dtype,
     ) -> Result<ir::Dtype, IrgenErrorMessage> {
         match lhs {
-            ir::Dtype::Float { width: lhs_width, ..   } => {
-                match rhs {
-                    ir::Dtype::Float { width: rhs_width, .. } => {
-                        return Ok(ir::Dtype::float(max(rhs_width, lhs_width)))
-                    }
-                    ir::Dtype::Int { .. } => {
-                        return Ok(ir::Dtype::float(lhs_width)) 
-                    }
-                    _ => panic!("lhs and rhs should be same type")
-                }
-            }
-            ir::Dtype::Int { width: lhs_width, is_signed: lhs_signed,  .. } => {
-                match rhs {
-                    ir::Dtype::Float { width,.. } => {
-                        return Ok(ir::Dtype::float(width)) 
-                    }
-                    ir::Dtype::Int { width: rhs_width, is_signed: rhs_signed, .. } => {
-                        let int_width = ir::Dtype::SIZE_OF_INT * ir::Dtype::BITS_OF_BYTE;
-                        if max(lhs_width, rhs_width) < int_width {
-                            return Ok(ir::Dtype::INT)
-                        } else if max(lhs_width, rhs_width) == int_width {
-                            if lhs_width == rhs_width {
-                                if !lhs_signed || !rhs_signed {
-                                    return Ok(ir::Dtype::Int {
-                                        width: int_width,
-                                        is_signed: false,
-                                        is_const: false,
-                                    })
-                                } else {
-                                    return Ok(ir::Dtype::INT)
-                                }
-                            } else if lhs_width == int_width {
-                                if !lhs_signed {
-                                    return Ok(ir::Dtype::Int {
-                                        width: int_width,
-                                        is_signed: false,
-                                        is_const: false,
-                                    })
-                                } else {
-                                    return Ok(ir::Dtype::INT)
-                                }
+            ir::Dtype::Float {
+                width: lhs_width, ..
+            } => match rhs {
+                ir::Dtype::Float {
+                    width: rhs_width, ..
+                } => return Ok(ir::Dtype::float(max(rhs_width, lhs_width))),
+                ir::Dtype::Int { .. } => return Ok(ir::Dtype::float(lhs_width)),
+                _ => panic!("lhs and rhs should be same type"),
+            },
+            ir::Dtype::Int {
+                width: lhs_width,
+                is_signed: lhs_signed,
+                ..
+            } => match rhs {
+                ir::Dtype::Float { width, .. } => return Ok(ir::Dtype::float(width)),
+                ir::Dtype::Int {
+                    width: rhs_width,
+                    is_signed: rhs_signed,
+                    ..
+                } => {
+                    let int_width = ir::Dtype::SIZE_OF_INT * ir::Dtype::BITS_OF_BYTE;
+                    if max(lhs_width, rhs_width) < int_width {
+                        return Ok(ir::Dtype::INT);
+                    } else if max(lhs_width, rhs_width) == int_width {
+                        if lhs_width == rhs_width {
+                            if !lhs_signed || !rhs_signed {
+                                return Ok(ir::Dtype::Int {
+                                    width: int_width,
+                                    is_signed: false,
+                                    is_const: false,
+                                });
                             } else {
-                                if !rhs_signed {
-                                    return Ok(ir::Dtype::Int {
-                                        width: int_width,
-                                        is_signed: false,
-                                        is_const: false,
-                                    })
-                                } else {
-                                    return Ok(ir::Dtype::INT)
-                                }
-
+                                return Ok(ir::Dtype::INT);
                             }
-                            
+                        } else if lhs_width == int_width {
+                            if !lhs_signed {
+                                return Ok(ir::Dtype::Int {
+                                    width: int_width,
+                                    is_signed: false,
+                                    is_const: false,
+                                });
+                            } else {
+                                return Ok(ir::Dtype::INT);
+                            }
                         } else {
-                            if lhs_width == rhs_width {
-                                if !lhs_signed || !rhs_signed {
-                                    return Ok(ir::Dtype::Int {
-                                        width: lhs_width,
-                                        is_signed: false,
-                                        is_const: false,
-                                    })
-                                } else {
-                                    return Ok(ir::Dtype::int(lhs_width))
-                                }
-                            } else if lhs_width > int_width {
-                                if !lhs_signed {
-                                    return Ok(ir::Dtype::Int {
-                                        width: lhs_width,
-                                        is_signed: false,
-                                        is_const: false,
-                                    })
-                                } else {
-                                    return Ok(ir::Dtype::int(lhs_width))
-                                }
+                            if !rhs_signed {
+                                return Ok(ir::Dtype::Int {
+                                    width: int_width,
+                                    is_signed: false,
+                                    is_const: false,
+                                });
                             } else {
-                                if !rhs_signed {
-                                    return Ok(ir::Dtype::Int {
-                                        width: rhs_width,
-                                        is_signed: false,
-                                        is_const: false,
-                                    })
-                                } else {
-                                    return Ok(ir::Dtype::int(rhs_width))
-                                }
-
+                                return Ok(ir::Dtype::INT);
                             }
-
+                        }
+                    } else {
+                        if lhs_width == rhs_width {
+                            if !lhs_signed || !rhs_signed {
+                                return Ok(ir::Dtype::Int {
+                                    width: lhs_width,
+                                    is_signed: false,
+                                    is_const: false,
+                                });
+                            } else {
+                                return Ok(ir::Dtype::int(lhs_width));
+                            }
+                        } else if lhs_width > int_width {
+                            if !lhs_signed {
+                                return Ok(ir::Dtype::Int {
+                                    width: lhs_width,
+                                    is_signed: false,
+                                    is_const: false,
+                                });
+                            } else {
+                                return Ok(ir::Dtype::int(lhs_width));
+                            }
+                        } else {
+                            if !rhs_signed {
+                                return Ok(ir::Dtype::Int {
+                                    width: rhs_width,
+                                    is_signed: false,
+                                    is_const: false,
+                                });
+                            } else {
+                                return Ok(ir::Dtype::int(rhs_width));
+                            }
                         }
                     }
-                    _ => panic!("lhs and rhs should be same type")
                 }
-            }
-            _ => todo!()
+                _ => panic!("lhs and rhs should be same type"),
+            },
+            _ => todo!(),
         }
     }
     /// Translate comma expression to IR instrunction
@@ -2034,35 +2094,33 @@ impl IrgenFunc<'_> {
         exprs: &[Node<Expression>],
         context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
-        let mut result = exprs 
+        let mut result = exprs
             .iter()
             .map(|e| self.translate_expr_rvalue(&e.node, context))
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(result.pop().expect("Comma expression expected expressions"))
     }
-    
-
 
     /// Translate function call to IR instructinos
     fn translate_func_call(
         &mut self,
         call: &CallExpression,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         // Extract function signature of callee
         let callee = self.translate_expr_rvalue(&call.callee.node, context)?;
         let function_pointer_type = callee.dtype();
         let function = function_pointer_type.get_pointer_inner().ok_or_else(|| {
-            IrgenErrorMessage::NeedFunctionOrFunctionPointer { 
-                callee: callee.clone()
+            IrgenErrorMessage::NeedFunctionOrFunctionPointer {
+                callee: callee.clone(),
             }
         })?;
 
         let (return_type, parameters) = function.get_function_inner().ok_or_else(|| {
-            IrgenErrorMessage::NeedFunctionOrFunctionPointer { 
-                callee: callee.clone()
-             }
+            IrgenErrorMessage::NeedFunctionOrFunctionPointer {
+                callee: callee.clone(),
+            }
         })?;
 
         let args = call
@@ -2071,9 +2129,9 @@ impl IrgenFunc<'_> {
             .map(|a| self.translate_expr_rvalue(&a.node, context))
             .collect::<Result<Vec<_>, _>>()?;
 
-        // Implicit type casting 
+        // Implicit type casting
         if args.len() != parameters.len() {
-            return Err(IrgenErrorMessage::Misc { 
+            return Err(IrgenErrorMessage::Misc {
                 message: format!("too few arguments to function `{}`", callee.write_string()),
             });
         }
@@ -2082,73 +2140,35 @@ impl IrgenFunc<'_> {
             .map(|(a, p)| self.translate_typecast(a, p.clone(), context))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let return_type  = return_type.clone().set_const(false);
+        let return_type = return_type.clone().set_const(false);
         context.insert_instruction(ir::Instruction::Call {
             callee,
             args,
             return_type,
         })
-        
     }
-
 
     fn translate_index_op(
         &mut self,
         lhs: &Expression,
         rhs: &Expression,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         let ptr_add = self.translate_expr_rvalue(lhs, context)?;
         let index = self.translate_expr_rvalue(rhs, context)?;
-        let index = self.translate_typecast(
-            index,
-            ir::Dtype::int(64),
-            context
-        )?;
-        // let mut offset_byte: usize = 1;
-        // if let Some(inner) = ptr_add.dtype().get_pointer_inner() {
-            // match inner {
-                // &ir::Dtype::Array {  size , ..  } => {
-                    // offset_byte = size;
-                        // offset = context.insert_instruction(
-                        // ir::Instruction::BinOp {
-                            // op: BinaryOperator::Multiply,
-                            // lhs: index.clone(),
-                            // rhs: ir::Operand::Constant(
-                                // ir::Constant::int(4 * (offset_byte as u128), index.dtype())
-
-                            // ),
-                            // dtype: index.dtype()
-                        // }
-                    // )?;
-                // }
-                // &ir::Dtype::Pointer { .. } => {
-                    // todo!() 
-                // }
-                // _ => ()
-            // }
-        // }
-
-        let offset = context.insert_instruction(
-        ir::Instruction::BinOp {
+        let index = self.translate_typecast(index, ir::Dtype::int(64), context)?;
+        let offset = context.insert_instruction(ir::Instruction::BinOp {
             op: BinaryOperator::Multiply,
             lhs: index.clone(),
-            rhs: ir::Operand::Constant(
-                ir::Constant::int(4 , index.dtype())
+            rhs: ir::Operand::Constant(ir::Constant::int(4, index.dtype())),
+            dtype: index.dtype(),
+        })?;
 
-            ),
-            dtype: index.dtype()
-            }
-        )?;
-
-
-        let ptr_add = context.insert_instruction(
-            ir::Instruction::GetElementPtr {
-                ptr: ptr_add.clone(),
-                offset,
-                dtype: ptr_add.dtype()
-            }
-        )?;
+        let ptr_add = context.insert_instruction(ir::Instruction::GetElementPtr {
+            ptr: ptr_add.clone(),
+            offset,
+            dtype: ptr_add.dtype(),
+        })?;
 
         Ok(ptr_add)
     }
@@ -2157,7 +2177,7 @@ impl IrgenFunc<'_> {
     fn translate_expr_lvalue(
         &mut self,
         expr: &Expression,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         match expr {
             Expression::Identifier(identifier) => self.lookup_symbol_table(&identifier.node.name),
@@ -2165,63 +2185,82 @@ impl IrgenFunc<'_> {
                 UnaryOperator::Indirection => {
                     self.translate_expr_rvalue(&unary.node.operand.node, context)
                 }
-                _ => Err(IrgenErrorMessage::Misc { 
-                    message: "This error occured at `IrgenFunc::translate_expr_lvalue`"
-                            .to_string()   
-                 })
-            }
+                _ => Err(IrgenErrorMessage::Misc {
+                    message: "This error occured at `IrgenFunc::translate_expr_lvalue`".to_string(),
+                }),
+            },
             Expression::BinaryOperator(binary) => match &binary.node.operator.node {
                 BinaryOperator::Index => {
                     self.translate_index_op(&binary.node.lhs.node, &binary.node.rhs.node, context)
                 }
-                _ => Err(IrgenErrorMessage::Misc { 
+                _ => Err(IrgenErrorMessage::Misc {
                     message: "binary operator expression cannot be used as l-value except \
                               index operator expression"
-                              .to_string()
-                 })
+                        .to_string(),
+                }),
             },
             Expression::StringLiteral(_string_lit) => todo!(),
-            Expression::Member(_member) => todo!(),
-            Expression::Conditional(_) 
+            Expression::Member(member) => self.translate_member(false, &member.node, context),
+            Expression::Conditional(_)
             | Expression::Constant(_)
             | Expression::Call(_)
             | Expression::Comma(_)
             | Expression::SizeOfTy(_)
             | Expression::AlignOf(_)
             | Expression::Cast(_)
-            | Expression::SizeOfVal(_) => {
-                Err(IrgenErrorMessage::Misc { 
-                    message: "This error occured at `IrgenFunc::translate_expr_lvalue`".to_string(),
-                 })
-            }
+            | Expression::SizeOfVal(_) => Err(IrgenErrorMessage::Misc {
+                message: "This error occured at `IrgenFunc::translate_expr_lvalue`".to_string(),
+            }),
             _ => panic!("`is unsupported`"),
-
         }
     }
-    // Type cast 
+    // Type cast
     fn translate_typecast(
         &mut self,
         value: ir::Operand,
         dtype: ir::Dtype,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         match (value.dtype(), dtype.clone()) {
-            (ir::Dtype::Int { width, is_signed, .. },
-            ir::Dtype::Int { width: target_width, is_signed: target_sign,.. }) => {
+            (
+                ir::Dtype::Int {
+                    width, is_signed, ..
+                },
+                ir::Dtype::Int {
+                    width: target_width,
+                    is_signed: target_sign,
+                    ..
+                },
+            ) => {
                 if width == target_width && is_signed == target_sign {
-                    return Ok(value)
+                    return Ok(value);
                 }
             }
-            (ir::Dtype::Float { width, .. },
-            ir::Dtype::Float { width: target_width, .. }) => {
+            (
+                ir::Dtype::Float { width, .. },
+                ir::Dtype::Float {
+                    width: target_width,
+                    ..
+                },
+            ) => {
                 if width == target_width {
-                    return Ok(value)
+                    return Ok(value);
                 }
             }
-            (ir::Dtype::Pointer { inner,.. },
-            ir::Dtype::Pointer { inner: target_inner, .. }) => {
+            (
+                ir::Dtype::Pointer { inner, .. },
+                ir::Dtype::Pointer {
+                    inner: target_inner,
+                    ..
+                },
+            ) => {
                 if inner.deref().clone() == target_inner.deref().clone() {
-                    return Ok(value)
+                    return Ok(value);
+                }
+            }
+            (ir::Dtype::Pointer { inner, .. }, ir::Dtype::Struct { .. }) => {
+                if let ir::Dtype::Struct { .. } = inner.deref() {
+                    return context.insert_instruction(ir::Instruction::Load { ptr: value });
                 }
             }
             _ => {}
@@ -2229,12 +2268,12 @@ impl IrgenFunc<'_> {
         if value.dtype() == dtype {
             Ok(value)
         } else {
-            context.insert_instruction(
-                ir::Instruction::TypeCast { value, target_dtype: dtype }
-            )
+            context.insert_instruction(ir::Instruction::TypeCast {
+                value,
+                target_dtype: dtype,
+            })
         }
     }
-
 
     fn translate_condition(
         &mut self,
@@ -2263,7 +2302,7 @@ impl IrgenFunc<'_> {
     fn translate_for_initializer(
         &mut self,
         initializer: &ForInitializer,
-        context: &mut Context
+        context: &mut Context,
     ) -> Result<(), IrgenErrorMessage> {
         match initializer {
             ForInitializer::Empty => (),
@@ -2280,7 +2319,6 @@ impl IrgenFunc<'_> {
         Ok(())
     }
 
-
     /// Translate conditon
     fn translate_opt_condition(
         &mut self,
@@ -2296,18 +2334,17 @@ impl IrgenFunc<'_> {
                 context,
                 ir::BlockExit::Jump {
                     arg: ir::JumpArg::new(bid_then, Vec::new()),
-                }
+                },
             );
             Ok(())
-
         }
     }
 
-    /// Translate switch body 
+    /// Translate switch body
     fn translate_switch_body(
         &mut self,
         stmt: &Statement,
-        bid_end: ir::BlockId
+        bid_end: ir::BlockId,
     ) -> Result<(Vec<(ir::Constant, ir::JumpArg)>, ir::BlockId), IrgenError> {
         let mut cases = Vec::new();
         let mut default = None;
@@ -2320,17 +2357,20 @@ impl IrgenFunc<'_> {
 
         // Enter variable scope for compound statement
         self.enter_scope();
-        
+
         for item in items {
             // Extract Statement from Block Item
             match &item.node {
                 BlockItem::Statement(stmt) => {
-                    self.translate_switch_body_inner(&stmt.node, &mut cases, &mut default, bid_end)?;
-
+                    self.translate_switch_body_inner(
+                        &stmt.node,
+                        &mut cases,
+                        &mut default,
+                        bid_end,
+                    )?;
                 }
                 _ => panic!("is unsupported"),
             }
-
         }
 
         self.exit_scope();
@@ -2350,9 +2390,10 @@ impl IrgenFunc<'_> {
         let label_stmt = if let Statement::Labeled(label_stmt) = stmt {
             &label_stmt.node
         } else {
-            panic!("`BlockItem::Statement` in the `Statement::Compound` of the `switch` \
+            panic!(
+                "`BlockItem::Statement` in the `Statement::Compound` of the `switch` \
                     is unsupported except `Statement::Labeled`"
-                )
+            )
         };
 
         let bid = self.alloc_bid();
@@ -2362,9 +2403,9 @@ impl IrgenFunc<'_> {
             if !case.is_integer_constant() {
                 return Err(IrgenError::new(
                     label_stmt.label.write_string(),
-                    IrgenErrorMessage::Misc { 
-                        message: "exception is not an integer constant expression".to_string()
-                     },
+                    IrgenErrorMessage::Misc {
+                        message: "exception is not an integer constant expression".to_string(),
+                    },
                 ));
             }
 
@@ -2372,46 +2413,44 @@ impl IrgenFunc<'_> {
             if cases.iter().any(|(c, _)| &case == c) {
                 return Err(IrgenError::new(
                     label_stmt.label.write_string(),
-                    IrgenErrorMessage::Misc { 
+                    IrgenErrorMessage::Misc {
                         message: "duplicate case value".to_string(),
-                     }
+                    },
                 ));
             }
             cases.push((case, ir::JumpArg::new(bid, Vec::new())));
-
         } else {
             if default.is_some() {
                 return Err(IrgenError::new(
                     label_stmt.label.write_string(),
                     IrgenErrorMessage::Misc {
                         message: "previous default already exists".to_string(),
-                    }        
+                    },
                 ));
             }
             *default = Some(bid);
         }
         Ok(())
     }
-    
+
     fn translate_switch_body_label_statement(
         &mut self,
         label_stmt: &LabeledStatement,
         bid: ir::BlockId,
-        bid_end: ir::BlockId
+        bid_end: ir::BlockId,
     ) -> Result<Option<ir::Constant>, IrgenError> {
         let case = match &label_stmt.label.node {
             Label::Identifier(_) => panic!("`Lable::Identifier` is unsupported"),
             Label::Case(expr) => {
-                let constant = ir::Constant::try_from(&expr.node)
-                        .map_err(|_| {
-                            IrgenError::new(
-                                expr.write_string(),
-                                IrgenErrorMessage::Misc { 
-                                    message: "case lable does not reduce to an integer constant"
-                                            .to_string()   
-                                 }
-                            )
-                        })?;
+                let constant = ir::Constant::try_from(&expr.node).map_err(|_| {
+                    IrgenError::new(
+                        expr.write_string(),
+                        IrgenErrorMessage::Misc {
+                            message: "case lable does not reduce to an integer constant"
+                                .to_string(),
+                        },
+                    )
+                })?;
                 Some(constant)
             }
             Label::Default => None,
@@ -2424,9 +2463,9 @@ impl IrgenFunc<'_> {
             panic!("`Statement ` in the `label` is unsupported except `Statement::Compound`")
         };
 
-        // Enter variable scope for compound statement 
+        // Enter variable scope for compound statement
         self.enter_scope();
-        
+
         // Split last and all the rest of the elements of the `Compound` items
         let (last, items) = items
             .split_last()
@@ -2442,10 +2481,9 @@ impl IrgenFunc<'_> {
                 BlockItem::Statement(stmt) => {
                     self.translate_stmt(&stmt.node, &mut context, None, None)?
                 }
-                _ => panic!("is unsupported")
+                _ => panic!("is unsupported"),
             }
         }
-
 
         // The last element of the `Compound` items must be `Statement::Break`
         let stmt = if let BlockItem::Statement(stmt) = &last.node {
@@ -2473,8 +2511,6 @@ impl IrgenFunc<'_> {
         );
         self.exit_scope();
         Ok(case)
-
-
     }
 
     /// Implicit typecast to bool
@@ -2484,76 +2520,71 @@ impl IrgenFunc<'_> {
         context: &mut Context,
     ) -> Result<ir::Operand, IrgenErrorMessage> {
         match condition.clone() {
-            ir::Operand::Constant(constant) => {
-                match constant {
-                    ir::Constant::Int {  width, is_signed , .. } => {
-                        if width == 1 && is_signed == false {
-                            return Ok(condition.clone())
-                        }
-                        
-                        context.insert_instruction(
-                            ir::Instruction::BinOp {
-                                op: BinaryOperator::NotEquals,
-                                lhs: condition.clone(),
-                                rhs: ir::Operand::Constant(ir::Constant::Int {
-                                    value: 0,
-                                    width,
-                                    is_signed,
-                                }),
-                                dtype: ir::Dtype::BOOL
-
-                            }
-                        )
-
-                    }
-                    _ => {
-                        Ok(condition.clone())
+            ir::Operand::Constant(constant) => match constant {
+                ir::Constant::Int {
+                    width, is_signed, ..
+                } => {
+                    if width == 1 && is_signed == false {
+                        return Ok(condition.clone());
                     }
 
+                    context.insert_instruction(ir::Instruction::BinOp {
+                        op: BinaryOperator::NotEquals,
+                        lhs: condition.clone(),
+                        rhs: ir::Operand::Constant(ir::Constant::Int {
+                            value: 0,
+                            width,
+                            is_signed,
+                        }),
+                        dtype: ir::Dtype::BOOL,
+                    })
                 }
-            }
-            ir::Operand::Register { dtype , .. } => {
-                match dtype {
-                    ir::Dtype::Int { width, is_signed, .. } => {
-                        if width == 1 && !is_signed {
-                            return Ok(condition.clone())
-                        }
-                        context.insert_instruction(
-                            ir::Instruction::BinOp {
-                                op: BinaryOperator::NotEquals,
-                                lhs: condition.clone(),
-                                rhs: ir::Operand::Constant(
-                                    ir::Constant::Int {
-                                        value: 0,
-                                        width,
-                                        is_signed
-                                    }
-                                ),
-                                dtype: ir::Dtype::INT
-                            }
-                        ) 
-                    }
-                    ir::Dtype::Float { width, ..  } => {
-                        context.insert_instruction(
-                            ir::Instruction::BinOp {
-                                op: BinaryOperator::NotEquals,
-                                lhs: condition.clone(),
-                                rhs: ir::Operand::Constant(
-                                    ir::Constant::Float {
-                                        value: OrderedFloat::<f64>::from(0.0),
-                                        width,
-                                    }
-                                ),
-                                dtype: ir::Dtype::FLOAT
-                            }
-                        ) 
-
-                    }
-                    _ => {
-                        panic!()
-                    }
+                ir::Constant::Float { width, .. } => {
+                    context.insert_instruction(ir::Instruction::BinOp {
+                        op: BinaryOperator::NotEquals,
+                        lhs: condition.clone(),
+                        rhs: ir::Operand::Constant(ir::Constant::Float {
+                            value: OrderedFloat::<f64>::from(0.0),
+                            width,
+                        }),
+                        dtype: ir::Dtype::BOOL,
+                    })
                 }
-            }
+                _ => Ok(condition.clone()),
+            },
+            ir::Operand::Register { dtype, .. } => match dtype {
+                ir::Dtype::Int {
+                    width, is_signed, ..
+                } => {
+                    if width == 1 && !is_signed {
+                        return Ok(condition.clone());
+                    }
+                    context.insert_instruction(ir::Instruction::BinOp {
+                        op: BinaryOperator::NotEquals,
+                        lhs: condition.clone(),
+                        rhs: ir::Operand::Constant(ir::Constant::Int {
+                            value: 0,
+                            width,
+                            is_signed,
+                        }),
+                        dtype: ir::Dtype::BOOL,
+                    })
+                }
+                ir::Dtype::Float { width, .. } => {
+                    context.insert_instruction(ir::Instruction::BinOp {
+                        op: BinaryOperator::NotEquals,
+                        lhs: condition.clone(),
+                        rhs: ir::Operand::Constant(ir::Constant::Float {
+                            value: OrderedFloat::<f64>::from(0.0),
+                            width,
+                        }),
+                        dtype: ir::Dtype::BOOL,
+                    })
+                }
+                _ => {
+                    panic!()
+                }
+            },
         }
     }
 
@@ -2588,16 +2619,15 @@ impl IrgenFunc<'_> {
 
                 // Exit variable scope created above
                 self.exit_scope();
-                
+
                 Ok(())
             }
             Statement::Expression(expr) => {
                 // Translates expr
                 if let Some(expr) = expr {
                     let _unused = self
-                            .translate_expr_rvalue(&expr.node, context)
-                            .map_err(|e| IrgenError::new(expr.write_string(), e))?;
-
+                        .translate_expr_rvalue(&expr.node, context)
+                        .map_err(|e| IrgenError::new(expr.write_string(), e))?;
                 }
                 Ok(())
             }
@@ -2613,23 +2643,22 @@ impl IrgenFunc<'_> {
                     bid_else,
                 )
                 .map_err(|e| IrgenError::new(stmt.node.condition.write_string(), e))?;
-                
+
                 // Translates then branch
                 let mut context_then = Context::new(bid_then);
                 self.translate_stmt(
                     &stmt.node.then_statement.node,
                     &mut context_then,
                     bid_continue,
-                    bid_break
+                    bid_break,
                 )?;
 
                 self.insert_block(
                     context_then,
-                    ir::BlockExit::Jump { 
+                    ir::BlockExit::Jump {
                         arg: ir::JumpArg::new(bid_end, Vec::new()),
-                     },
+                    },
                 );
-
 
                 // Translate else branch
                 let mut context_else = Context::new(bid_else);
@@ -2638,23 +2667,22 @@ impl IrgenFunc<'_> {
                         &else_stmt.node,
                         &mut context_else,
                         bid_continue,
-                        bid_break
+                        bid_break,
                     )?;
                 }
                 self.insert_block(
                     context_else,
                     ir::BlockExit::Jump {
                         arg: ir::JumpArg::new(bid_end, Vec::new()),
-                    }
+                    },
                 );
 
                 Ok(())
-                
             }
 
             Statement::Return(expr) => {
                 let value = match expr {
-                    Some(expr) => self 
+                    Some(expr) => self
                         .translate_expr_rvalue(&expr.node, context)
                         .map_err(|e| IrgenError::new(expr.write_string(), e))?,
                     None => ir::Operand::constant(ir::Constant::unit()),
@@ -2672,7 +2700,6 @@ impl IrgenFunc<'_> {
                 );
 
                 Ok(())
-
             }
 
             Statement::For(for_stmt) => {
@@ -2682,9 +2709,9 @@ impl IrgenFunc<'_> {
                 let bid_init = self.alloc_bid();
                 self.insert_block(
                     mem::replace(context, Context::new(bid_init)),
-                    ir::BlockExit::Jump { 
-                        arg: ir::JumpArg::new(bid_init, Vec::new())
-                     }
+                    ir::BlockExit::Jump {
+                        arg: ir::JumpArg::new(bid_init, Vec::new()),
+                    },
                 );
 
                 // Enter variable scope for for-loop initialier
@@ -2697,9 +2724,9 @@ impl IrgenFunc<'_> {
                 let bid_cond = self.alloc_bid();
                 self.insert_block(
                     mem::replace(context, Context::new(bid_cond)),
-                    ir::BlockExit::Jump { 
-                        arg: ir::JumpArg::new(bid_cond, Vec::new())
-                     }
+                    ir::BlockExit::Jump {
+                        arg: ir::JumpArg::new(bid_cond, Vec::new()),
+                    },
                 );
 
                 let bid_body = self.alloc_bid();
@@ -2712,7 +2739,6 @@ impl IrgenFunc<'_> {
                     bid_end,
                 )
                 .map_err(|e| IrgenError::new(for_stmt.condition.write_string(), e))?;
-
 
                 // Enter variable scope for for-loop body
                 self.enter_scope();
@@ -2730,30 +2756,30 @@ impl IrgenFunc<'_> {
 
                 self.insert_block(
                     context_body,
-                    ir::BlockExit::Jump { 
+                    ir::BlockExit::Jump {
                         arg: ir::JumpArg::new(bid_step, Vec::new()),
-                     }
+                    },
                 );
 
                 let mut context_step = Context::new(bid_step);
                 if let Some(step_expr) = &for_stmt.step {
                     let _unused = self
-                            .translate_expr_rvalue(&step_expr.node, &mut context_step)
-                            .map_err(|e| IrgenError::new(for_stmt.step.write_string(), e))?;
+                        .translate_expr_rvalue(&step_expr.node, &mut context_step)
+                        .map_err(|e| IrgenError::new(for_stmt.step.write_string(), e))?;
                 }
 
                 self.insert_block(
                     context_step,
-                    ir::BlockExit::Jump { 
+                    ir::BlockExit::Jump {
                         arg: ir::JumpArg::new(bid_cond, Vec::new()),
-                     }
+                    },
                 );
 
                 // Exit variable scope for for-loop body initializer
                 self.exit_scope();
 
                 Ok(())
-            }   
+            }
 
             Statement::While(while_stmt) => {
                 let while_stmt = &while_stmt.node;
@@ -2761,9 +2787,9 @@ impl IrgenFunc<'_> {
                 let bid_cond = self.alloc_bid();
                 self.insert_block(
                     mem::replace(context, Context::new(bid_cond)),
-                    ir::BlockExit::Jump { 
-                        arg: ir::JumpArg::new(bid_cond, Vec::new())
-                     }
+                    ir::BlockExit::Jump {
+                        arg: ir::JumpArg::new(bid_cond, Vec::new()),
+                    },
                 );
 
                 let bid_body = self.alloc_bid();
@@ -2772,7 +2798,7 @@ impl IrgenFunc<'_> {
                     &while_stmt.expression.node,
                     mem::replace(context, Context::new(bid_end)),
                     bid_body,
-                    bid_end
+                    bid_end,
                 )
                 .map_err(|e| IrgenError::new(while_stmt.expression.write_string(), e))?;
 
@@ -2784,14 +2810,14 @@ impl IrgenFunc<'_> {
                     &while_stmt.statement.node,
                     &mut context_body,
                     Some(bid_cond),
-                    Some(bid_end)
+                    Some(bid_end),
                 )?;
 
                 self.insert_block(
                     context_body,
-                    ir::BlockExit::Jump { 
+                    ir::BlockExit::Jump {
                         arg: ir::JumpArg::new(bid_cond, Vec::new()),
-                     },
+                    },
                 );
 
                 // Exit variable scope created above
@@ -2807,8 +2833,8 @@ impl IrgenFunc<'_> {
                 let bid_body = self.alloc_bid();
                 self.insert_block(
                     mem::replace(context, Context::new(bid_body)),
-                    ir::BlockExit::Jump{
-                        arg: ir::JumpArg::new(bid_body, Vec::new())
+                    ir::BlockExit::Jump {
+                        arg: ir::JumpArg::new(bid_body, Vec::new()),
                     },
                 );
 
@@ -2821,7 +2847,7 @@ impl IrgenFunc<'_> {
                     &while_stmt.statement.node,
                     context,
                     Some(bid_cond),
-                    Some(bid_end)
+                    Some(bid_end),
                 )?;
 
                 // Exit variable scope created above
@@ -2829,9 +2855,9 @@ impl IrgenFunc<'_> {
 
                 self.insert_block(
                     mem::replace(context, Context::new(bid_cond)),
-                    ir::BlockExit::Jump { 
-                        arg: ir::JumpArg::new(bid_cond, Vec::new())
-                     }
+                    ir::BlockExit::Jump {
+                        arg: ir::JumpArg::new(bid_cond, Vec::new()),
+                    },
                 );
 
                 self.translate_condition(
@@ -2851,7 +2877,7 @@ impl IrgenFunc<'_> {
                     .map_err(|e| IrgenError::new(switch_stmt.node.expression.write_string(), e))?;
 
                 let bid_end = self.alloc_bid();
-                let (cases, bid_default) = 
+                let (cases, bid_default) =
                     self.translate_switch_body(&switch_stmt.node.statement.node, bid_end)?;
 
                 self.insert_block(
@@ -2860,7 +2886,7 @@ impl IrgenFunc<'_> {
                         value,
                         default: ir::JumpArg::new(bid_default, Vec::new()),
                         cases,
-                    }
+                    },
                 );
 
                 Ok(())
@@ -2870,18 +2896,18 @@ impl IrgenFunc<'_> {
                 let bid_continue = bid_continue.ok_or_else(|| {
                     IrgenError::new(
                         "continue;".to_string(),
-                        IrgenErrorMessage::Misc { 
+                        IrgenErrorMessage::Misc {
                             message: "continue statement not within a loop".to_string(),
-                         }
+                        },
                     )
                 })?;
 
                 let next_context = Context::new(self.alloc_bid());
                 self.insert_block(
                     mem::replace(context, next_context),
-                    ir::BlockExit::Jump { 
+                    ir::BlockExit::Jump {
                         arg: ir::JumpArg::new(bid_continue, Vec::new()),
-                     }
+                    },
                 );
 
                 Ok(())
@@ -2891,33 +2917,32 @@ impl IrgenFunc<'_> {
                 let bid_break = bid_break.ok_or_else(|| {
                     IrgenError::new(
                         "break;".to_string(),
-                        IrgenErrorMessage::Misc { 
+                        IrgenErrorMessage::Misc {
                             message: "break statement not within a loop or switch".to_string(),
-                         }
+                        },
                     )
                 })?;
 
                 let next_context = Context::new(self.alloc_bid());
                 self.insert_block(
                     mem::replace(context, next_context),
-                    ir::BlockExit::Jump { 
+                    ir::BlockExit::Jump {
                         arg: ir::JumpArg::new(bid_break, Vec::new()),
-                     }
+                    },
                 );
 
                 Ok(())
-
             }
 
             Statement::Labeled(label_stmt) => Err(IrgenError::new(
                 label_stmt.node.label.write_string(),
-                IrgenErrorMessage::Misc { 
+                IrgenErrorMessage::Misc {
                     message: "label statement not within a switch".to_string(),
-                 }
+                },
             )),
 
-            _ => todo!()
-        } 
+            _ => todo!(),
+        }
     }
 
     /// Translate parameter declaration of the functions to IR.
@@ -2986,13 +3011,13 @@ impl IrgenFunc<'_> {
         name_of_params: &[String],
         context: &mut Context,
     ) -> Result<(), IrgenErrorMessage> {
-        if signature.params.len() != name_of_params.len() {
-            panic!("length of `parameters` and `name_of_params` must be same")
-        } 
+        // if signature.params.len() != name_of_params.len() {
+        // panic!("length of `parameters` and `name_of_params` must be same")
+        // }
         for (i, (dtype, var)) in izip!(&signature.params, name_of_params).enumerate() {
             let value = Some(ir::Operand::register(
                 ir::RegisterId::arg(bid_init, i),
-                     dtype.clone()
+                dtype.clone(),
             ));
             let _unused = self.translate_alloc(var.clone(), dtype.clone(), value, context)?;
         }
@@ -3001,26 +3026,20 @@ impl IrgenFunc<'_> {
     }
 
     fn add_phinodes(
-        &mut self, 
-        signature: &ir::FunctionSignature, 
-        name_of_params: &[String], 
+        &mut self,
+        signature: &ir::FunctionSignature,
+        name_of_params: &[String],
     ) -> Result<(), IrgenErrorMessage> {
-        if signature.params.len() != name_of_params.len() {
-            panic!("length of `parameters` and `name_of_params` must be same")
-        } 
+        // if signature.params.len() != name_of_params.len() {
+        // panic!("length of `parameters` and `name_of_params` must be same")
+        // }
         for (_i, (dtype, var)) in izip!(&signature.params, name_of_params).enumerate() {
             let _unused = self.insert_phinodes(ir::Named::new(Some(var.clone()), dtype.clone()));
         }
 
         Ok(())
     }
-
-    
 }
-
-
-
-
 
 #[inline]
 fn name_of_declarator(declarator: &Declarator) -> String {

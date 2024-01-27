@@ -10,10 +10,11 @@ int sum(int len, int *p) {
 int main() {
     int a[5];
     int len = 5;
-    
+
     for (int i = 0; i < len; i++) {
         a[i] = i;
     }
 
     return sum(len, a) == 10;
 }
+

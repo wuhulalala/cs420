@@ -1,0 +1,100 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "a"
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Short
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "b"
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Unsigned
+            DeclarationSpecifier
+                TypeSpecifier Char
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "c"
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Void
+            Declarator
+                DeclaratorKind
+                    Identifier "d"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Char
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "e"
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "a"
+                                Expression
+                                    Identifier "e"
+                                BinaryOperator Assign
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Void
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "b"
+                                Expression
+                                    UnaryOperatorExpression
+                                        UnaryOperator Complement
+                                        Expression
+                                            Identifier "c"
+                                BinaryOperator Assign
+                BlockItem
+                    Statement
+                        Expression
+                            CallExpression
+                                Expression
+                                    Identifier "d"
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "b"
+                                        Expression
+                                            Constant
+                                                Integer "8"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator ShiftRight
+                BlockItem
+                    Statement Return
+                        Expression
+                            Identifier "a"
