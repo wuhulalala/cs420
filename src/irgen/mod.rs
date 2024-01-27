@@ -616,8 +616,10 @@ impl IrgenFunc<'_> {
                 ir::Dtype::Unit { .. } => todo!(),
                 // when applying initializer, type checking is necessary
                 ir::Dtype::Int { .. } | ir::Dtype::Float { .. } | ir::Dtype::Pointer { .. } => {
-                    let value = init_decl.node.initializer.as_ref().map(|initializer| self.translate_initializer(&initializer.node, context)
-                                .unwrap());
+                    let value = init_decl.node.initializer.as_ref().map(|initializer| {
+                        self.translate_initializer(&initializer.node, context)
+                            .unwrap()
+                    });
 
                     let _unused = self.translate_alloc(name, dtype.clone(), value, context)?;
                 }
@@ -709,7 +711,6 @@ impl IrgenFunc<'_> {
 
                 let dtype = self.structs.get(&name).unwrap().clone().unwrap();
                 let (_sizeof, _alignof, offsets) = dtype
-                    
                     .get_struct_size_align_offsets()
                     .unwrap()
                     .clone()
@@ -1069,12 +1070,8 @@ impl IrgenFunc<'_> {
             Expression::Call(_) => {
                 // Allocates at stack.
                 let var = self.alloc_tempid();
-                let _unused = self.translate_alloc(
-                    var.clone(),
-                    ptr.dtype(),
-                    Some(ptr.clone()),
-                    context,
-                )?;
+                let _unused =
+                    self.translate_alloc(var.clone(), ptr.dtype(), Some(ptr.clone()), context)?;
                 ptr = self.lookup_symbol_table(&var)?;
             }
             _ => {}
@@ -1361,10 +1358,7 @@ impl IrgenFunc<'_> {
                     }
                     _ => panic!("only int and pointer"),
                 }
-                let _unused = context.insert_instruction(ir::Instruction::Store {
-                    ptr,
-                    value,
-                })?;
+                let _unused = context.insert_instruction(ir::Instruction::Store { ptr, value })?;
 
                 Ok(val)
             }
