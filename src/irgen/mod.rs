@@ -368,7 +368,7 @@ impl Irgen {
 
         irgen
             .add_phinodes(&signature, &name_of_params)
-            .map_err(|e| IrgenError::new(format!("error about phinode"), e))?;
+            .map_err(|e| IrgenError::new("error about phinode".to_string(), e))?;
         // Translates statement.
         irgen.translate_stmt(&source.statement.node, &mut context, None, None)?;
 
@@ -607,7 +607,7 @@ impl IrgenFunc<'_> {
 
             let dtype = dtype
                 .into_inner()
-                .resolve_typedefs(&self.typedefs)
+                .resolve_typedefs(self.typedefs)
                 .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
             let name = name_of_declarator(&declarator);
@@ -616,14 +616,8 @@ impl IrgenFunc<'_> {
                 ir::Dtype::Unit { .. } => todo!(),
                 // when applying initializer, type checking is necessary
                 ir::Dtype::Int { .. } | ir::Dtype::Float { .. } | ir::Dtype::Pointer { .. } => {
-                    let value = if let Some(initializer) = &init_decl.node.initializer {
-                        Some(
-                            self.translate_initializer(&initializer.node, context)
-                                .unwrap(),
-                        )
-                    } else {
-                        None
-                    };
+                    let value = init_decl.node.initializer.as_ref().map(|initializer| self.translate_initializer(&initializer.node, context)
+                                .unwrap());
 
                     let _unused = self.translate_alloc(name, dtype.clone(), value, context)?;
                 }
@@ -715,13 +709,13 @@ impl IrgenFunc<'_> {
 
                 let dtype = self.structs.get(&name).unwrap().clone().unwrap();
                 let (_sizeof, _alignof, offsets) = dtype
-                    .clone()
+                    
                     .get_struct_size_align_offsets()
                     .unwrap()
                     .clone()
                     .unwrap();
 
-                let fields = dtype.clone().get_struct_fields().unwrap().clone().unwrap();
+                let fields = dtype.get_struct_fields().unwrap().clone().unwrap();
 
                 for (i, initial_item) in izip!(lists).enumerate() {
                     let ptr_add = context.insert_instruction(ir::Instruction::GetElementPtr {
@@ -816,7 +810,7 @@ impl IrgenFunc<'_> {
                                     })?;
                             }
 
-                            let _unused = self.list_initializer(
+                            self.list_initializer(
                                 &initial_item.node.initializer.node,
                                 ptr.clone(),
                                 dtype.get_array_inner().unwrap().clone(),
@@ -852,7 +846,7 @@ impl IrgenFunc<'_> {
                         }
                     }
                 }
-                return Ok(());
+                Ok(())
             }
             Initializer::Expression(_) => {
                 panic!("must be list")
@@ -972,7 +966,7 @@ impl IrgenFunc<'_> {
                     return self.conver_array_to_ponter(ptr, array_inner.clone(), context);
                 }
 
-                let _unused = match ptr_inner_type {
+                match ptr_inner_type {
                     &ir::Dtype::Struct { .. } => return Ok(ptr),
                     _ => (),
                 };
@@ -1033,7 +1027,7 @@ impl IrgenFunc<'_> {
                     .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
                 let target_dtype = target_dtype
-                    .resolve_typedefs(&self.typedefs)
+                    .resolve_typedefs(self.typedefs)
                     .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
                 let operand = self.translate_expr_rvalue(&cast.node.expression.node, context)?;
@@ -1050,7 +1044,7 @@ impl IrgenFunc<'_> {
                 self.translate_conditional(&conditional.node, context)
             }
 
-            Expression::Comma(exprs) => self.translate_comma(&exprs, context),
+            Expression::Comma(exprs) => self.translate_comma(exprs, context),
             _ => panic!("`is unsupported`"),
         }
     }
@@ -1077,7 +1071,7 @@ impl IrgenFunc<'_> {
                 let var = self.alloc_tempid();
                 let _unused = self.translate_alloc(
                     var.clone(),
-                    ptr.dtype().clone(),
+                    ptr.dtype(),
                     Some(ptr.clone()),
                     context,
                 )?;
@@ -1102,7 +1096,7 @@ impl IrgenFunc<'_> {
         match member.operator.node {
             MemberOperator::Direct => {
                 let mut val = context.insert_instruction(ir::Instruction::GetElementPtr {
-                    ptr: ptr.clone(),
+                    ptr,
                     offset: ir::Operand::Constant(ir::Constant::Int {
                         value: offset as u128,
                         width: 64,
@@ -1123,7 +1117,7 @@ impl IrgenFunc<'_> {
             }
             MemberOperator::Indirect => {
                 let mut val = context.insert_instruction(ir::Instruction::GetElementPtr {
-                    ptr: ptr.clone(),
+                    ptr,
                     offset: ir::Operand::Constant(ir::Constant::Int {
                         value: offset as u128,
                         width: 64,
@@ -1197,7 +1191,7 @@ impl IrgenFunc<'_> {
                     .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
                 let target_dtype = target_dtype
-                    .resolve_typedefs(&self.typedefs)
+                    .resolve_typedefs(self.typedefs)
                     .map_err(|e| IrgenErrorMessage::InvalidDtype { dtype_error: e })?;
 
                 Ok(target_dtype)
@@ -1369,7 +1363,7 @@ impl IrgenFunc<'_> {
                 }
                 let _unused = context.insert_instruction(ir::Instruction::Store {
                     ptr,
-                    value: value.clone(),
+                    value,
                 })?;
 
                 Ok(val)
@@ -1495,7 +1489,7 @@ impl IrgenFunc<'_> {
                 let ptr = self.translate_expr_lvalue(lhs, context)?;
                 let val_rhs = self.translate_expr_rvalue(rhs, context)?;
                 let val_rhs = self.translate_typecast(
-                    val_rhs.clone(),
+                    val_rhs,
                     ptr.dtype().get_pointer_inner().unwrap().clone(),
                     context,
                 )?;
@@ -1515,7 +1509,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::BitwiseAnd,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1533,7 +1527,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::BitwiseOr,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1551,7 +1545,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::BitwiseXor,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1569,7 +1563,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Divide,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1587,7 +1581,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Minus,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1605,7 +1599,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Modulo,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1623,7 +1617,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Multiply,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1641,7 +1635,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::Plus,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1659,7 +1653,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::ShiftLeft,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1677,7 +1671,7 @@ impl IrgenFunc<'_> {
                 let value = context.insert_instruction(ir::Instruction::BinOp {
                     op: BinaryOperator::ShiftRight,
                     lhs: val_lhs.clone(),
-                    rhs: val_rhs.clone(),
+                    rhs: val_rhs,
                     dtype: val_lhs.dtype(),
                 })?;
                 let _unused = context.insert_instruction(ir::Instruction::Store {
@@ -1697,7 +1691,7 @@ impl IrgenFunc<'_> {
                 let dtype = self.merge_dtype(val_lhs.dtype(), val_rhs.dtype())?;
 
                 let val_lhs = self.translate_typecast(val_lhs, dtype.clone(), context)?;
-                let val_rhs = self.translate_typecast(val_rhs, dtype.clone(), context)?;
+                let val_rhs = self.translate_typecast(val_rhs, dtype, context)?;
                 context.insert_instruction(ir::Instruction::BinOp {
                     op: opt,
                     lhs: val_lhs,
@@ -1738,7 +1732,7 @@ impl IrgenFunc<'_> {
                 let bid_temp = self.alloc_bid();
                 let bid_end = self.alloc_bid();
 
-                let _unused = self.translate_condition(
+                self.translate_condition(
                     lhs,
                     mem::replace(context, Context::new(bid_end)),
                     bid_second,
@@ -1803,7 +1797,7 @@ impl IrgenFunc<'_> {
                 let bid_temp = self.alloc_bid();
                 let bid_end = self.alloc_bid();
 
-                let _unused = self.translate_condition(
+                self.translate_condition(
                     lhs,
                     mem::replace(context, Context::new(bid_end)),
                     bid_temp,
@@ -1893,7 +1887,7 @@ impl IrgenFunc<'_> {
                 match ptr_add.dtype().get_pointer_inner().unwrap().clone() {
                     ir::Dtype::Array { inner, .. } => {
                         context.insert_instruction(ir::Instruction::GetElementPtr {
-                            ptr: ptr_add.clone(),
+                            ptr: ptr_add,
                             offset: ir::Operand::Constant(ir::Constant::int(0, ir::Dtype::INT)),
                             dtype: ir::Dtype::pointer(inner.deref().clone()),
                         })
@@ -1913,7 +1907,7 @@ impl IrgenFunc<'_> {
     }
 
     fn get_rest_byte(&mut self, dtype: ir::Dtype) -> usize {
-        match dtype.clone() {
+        match dtype {
             ir::Dtype::Array { size, .. } => {
                 self.get_rest_byte(dtype.get_array_inner().unwrap().clone()) * size
             }
@@ -1999,8 +1993,8 @@ impl IrgenFunc<'_> {
             } => match rhs {
                 ir::Dtype::Float {
                     width: rhs_width, ..
-                } => return Ok(ir::Dtype::float(max(rhs_width, lhs_width))),
-                ir::Dtype::Int { .. } => return Ok(ir::Dtype::float(lhs_width)),
+                } => Ok(ir::Dtype::float(max(rhs_width, lhs_width))),
+                ir::Dtype::Int { .. } => Ok(ir::Dtype::float(lhs_width)),
                 _ => panic!("lhs and rhs should be same type"),
             },
             ir::Dtype::Int {
@@ -2008,7 +2002,7 @@ impl IrgenFunc<'_> {
                 is_signed: lhs_signed,
                 ..
             } => match rhs {
-                ir::Dtype::Float { width, .. } => return Ok(ir::Dtype::float(width)),
+                ir::Dtype::Float { width, .. } => Ok(ir::Dtype::float(width)),
                 ir::Dtype::Int {
                     width: rhs_width,
                     is_signed: rhs_signed,
@@ -2016,7 +2010,7 @@ impl IrgenFunc<'_> {
                 } => {
                     let int_width = ir::Dtype::SIZE_OF_INT * ir::Dtype::BITS_OF_BYTE;
                     if max(lhs_width, rhs_width) < int_width {
-                        return Ok(ir::Dtype::INT);
+                        Ok(ir::Dtype::INT)
                     } else if max(lhs_width, rhs_width) == int_width {
                         if lhs_width == rhs_width {
                             if !lhs_signed || !rhs_signed {
@@ -2038,49 +2032,43 @@ impl IrgenFunc<'_> {
                             } else {
                                 return Ok(ir::Dtype::INT);
                             }
+                        } else if !rhs_signed {
+                            return Ok(ir::Dtype::Int {
+                                width: int_width,
+                                is_signed: false,
+                                is_const: false,
+                            });
                         } else {
-                            if !rhs_signed {
-                                return Ok(ir::Dtype::Int {
-                                    width: int_width,
-                                    is_signed: false,
-                                    is_const: false,
-                                });
-                            } else {
-                                return Ok(ir::Dtype::INT);
-                            }
+                            return Ok(ir::Dtype::INT);
                         }
+                    } else if lhs_width == rhs_width {
+                        if !lhs_signed || !rhs_signed {
+                            return Ok(ir::Dtype::Int {
+                                width: lhs_width,
+                                is_signed: false,
+                                is_const: false,
+                            });
+                        } else {
+                            return Ok(ir::Dtype::int(lhs_width));
+                        }
+                    } else if lhs_width > int_width {
+                        if !lhs_signed {
+                            return Ok(ir::Dtype::Int {
+                                width: lhs_width,
+                                is_signed: false,
+                                is_const: false,
+                            });
+                        } else {
+                            return Ok(ir::Dtype::int(lhs_width));
+                        }
+                    } else if !rhs_signed {
+                        return Ok(ir::Dtype::Int {
+                            width: rhs_width,
+                            is_signed: false,
+                            is_const: false,
+                        });
                     } else {
-                        if lhs_width == rhs_width {
-                            if !lhs_signed || !rhs_signed {
-                                return Ok(ir::Dtype::Int {
-                                    width: lhs_width,
-                                    is_signed: false,
-                                    is_const: false,
-                                });
-                            } else {
-                                return Ok(ir::Dtype::int(lhs_width));
-                            }
-                        } else if lhs_width > int_width {
-                            if !lhs_signed {
-                                return Ok(ir::Dtype::Int {
-                                    width: lhs_width,
-                                    is_signed: false,
-                                    is_const: false,
-                                });
-                            } else {
-                                return Ok(ir::Dtype::int(lhs_width));
-                            }
-                        } else {
-                            if !rhs_signed {
-                                return Ok(ir::Dtype::Int {
-                                    width: rhs_width,
-                                    is_signed: false,
-                                    is_const: false,
-                                });
-                            } else {
-                                return Ok(ir::Dtype::int(rhs_width));
-                            }
-                        }
+                        return Ok(ir::Dtype::int(rhs_width));
                     }
                 }
                 _ => panic!("lhs and rhs should be same type"),
@@ -2524,13 +2512,13 @@ impl IrgenFunc<'_> {
                 ir::Constant::Int {
                     width, is_signed, ..
                 } => {
-                    if width == 1 && is_signed == false {
-                        return Ok(condition.clone());
+                    if width == 1 && !is_signed {
+                        return Ok(condition);
                     }
 
                     context.insert_instruction(ir::Instruction::BinOp {
                         op: BinaryOperator::NotEquals,
-                        lhs: condition.clone(),
+                        lhs: condition,
                         rhs: ir::Operand::Constant(ir::Constant::Int {
                             value: 0,
                             width,
@@ -2542,7 +2530,7 @@ impl IrgenFunc<'_> {
                 ir::Constant::Float { width, .. } => {
                     context.insert_instruction(ir::Instruction::BinOp {
                         op: BinaryOperator::NotEquals,
-                        lhs: condition.clone(),
+                        lhs: condition,
                         rhs: ir::Operand::Constant(ir::Constant::Float {
                             value: OrderedFloat::<f64>::from(0.0),
                             width,
@@ -2550,18 +2538,18 @@ impl IrgenFunc<'_> {
                         dtype: ir::Dtype::BOOL,
                     })
                 }
-                _ => Ok(condition.clone()),
+                _ => Ok(condition),
             },
             ir::Operand::Register { dtype, .. } => match dtype {
                 ir::Dtype::Int {
                     width, is_signed, ..
                 } => {
                     if width == 1 && !is_signed {
-                        return Ok(condition.clone());
+                        return Ok(condition);
                     }
                     context.insert_instruction(ir::Instruction::BinOp {
                         op: BinaryOperator::NotEquals,
-                        lhs: condition.clone(),
+                        lhs: condition,
                         rhs: ir::Operand::Constant(ir::Constant::Int {
                             value: 0,
                             width,
@@ -2573,7 +2561,7 @@ impl IrgenFunc<'_> {
                 ir::Dtype::Float { width, .. } => {
                     context.insert_instruction(ir::Instruction::BinOp {
                         op: BinaryOperator::NotEquals,
-                        lhs: condition.clone(),
+                        lhs: condition,
                         rhs: ir::Operand::Constant(ir::Constant::Float {
                             value: OrderedFloat::<f64>::from(0.0),
                             width,
