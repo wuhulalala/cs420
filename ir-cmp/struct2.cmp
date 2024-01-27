@@ -1,4 +1,0 @@
-1d0
-< struct %t0 : { b:[4 x i32] }
-2a2
-> struct %t0 : { b:[4 x i32] }
