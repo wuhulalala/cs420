@@ -9,9 +9,9 @@ use std::process::{Command, Stdio};
 use lang_c::ast::TranslationUnit;
 
 //debug for homework1
-use lang_c::print::Printer;
-use lang_c::visit::Visit;
-use std::fs::File;
+// use lang_c::print::Printer;
+// use lang_c::visit::Visit;
+// use std::fs::File;
 
 use tempfile::tempdir;
 
@@ -97,7 +97,7 @@ fn main() {
 
     let ext = input.extension();
     if ext == Some(OsStr::new("c")) {
-        let file_name = input
+        let _file_name = input
             .clone()
             .file_stem()
             .unwrap()
@@ -105,15 +105,15 @@ fn main() {
             .to_string();
         let input = ok_or_exit!(Parse::default().translate(&input), 1);
 
-        /* this code block is for debugging homework1 */
-        {
-            let s = &mut String::new();
-            Printer::new(s).visit_translation_unit(&input);
-            let output_filename = format!("{}.txt", file_name);
-            let mut file = File::create(output_filename).expect("Unable to create file");
-            file.write_all(s.as_bytes())
-                .expect("Unable to write to file");
-        }
+        // /* this code block is for debugging homework1 */
+        // {
+        // let s = &mut String::new();
+        // Printer::new(s).visit_translation_unit(&input);
+        // let output_filename = format!("{}.txt", file_name);
+        // let mut file = File::create(output_filename).expect("Unable to create file");
+        // file.write_all(s.as_bytes())
+        // .expect("Unable to write to file");
+        // }
 
         compile_c(&input, &mut output, &matches);
     } else if ext == Some(OsStr::new("ir")) {

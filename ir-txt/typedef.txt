@@ -1,0 +1,88 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                StorageClassSpecifier Typedef
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "i32_t"
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                StorageClassSpecifier Typedef
+            DeclarationSpecifier
+                TypeSpecifier TypedefName
+                    Identifier "i32_t"
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "p_i32_t"
+                    DerivedDeclarator Pointer
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier TypedefName
+                                Identifier "i32_t"
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "a"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier TypedefName
+                                Identifier "p_i32_t"
+                        DeclarationSpecifier
+                            TypeQualifier Const
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "b"
+                            Initializer
+                                Expression
+                                    UnaryOperatorExpression
+                                        UnaryOperator Address
+                                        Expression
+                                            Identifier "a"
+                BlockItem
+                    Statement
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    UnaryOperatorExpression
+                                        UnaryOperator Indirection
+                                        Expression
+                                            Identifier "b"
+                                Expression
+                                    Constant
+                                        Integer "1"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Assign
+                BlockItem
+                    Statement Return
+                        Expression
+                            UnaryOperatorExpression
+                                UnaryOperator Indirection
+                                Expression
+                                    Identifier "b"

@@ -1,0 +1,16 @@
+21c21
+<   br %b0:i5:u1, b5(), b4()
+---
+>   br %b0:i5:u1, b4(), b5()
+38,40c38
+<   %b4:i0:unit = store 1:i32 %l1:i32*
+<   %b4:i1:u1 = cmp ne 1:i32 0:i32
+<   %b4:i2:unit = store %b4:i1:u1 %l4:u1*
+---
+>   %b4:i0:unit = store 1:u1 %l4:u1*
+44c42,44
+<   %b5:i0:unit = store 1:u1 %l4:u1*
+---
+>   %b5:i0:unit = store 1:i32 %l1:i32*
+>   %b5:i1:u1 = cmp ne 1:i32 0:i32
+>   %b5:i2:unit = store %b5:i1:u1 %l4:u1*

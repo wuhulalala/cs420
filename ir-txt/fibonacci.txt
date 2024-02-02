@@ -1,0 +1,124 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "nonce"
+                Initializer
+                    Expression
+                        Constant
+                            Integer "1"
+                                IntegerBase Decimal
+                                IntegerSuffix false false
+                                    IntegerSize Int
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "fibonacci"
+                DerivedDeclarator
+                    FunctionDeclarator
+                        ParameterDeclaration
+                            DeclarationSpecifier
+                                TypeSpecifier Int
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "n"
+                        Ellipsis None
+            Statement Compound
+                BlockItem
+                    Statement
+                        IfStatement
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "n"
+                                    Expression
+                                        Constant
+                                            Integer "2"
+                                                IntegerBase Decimal
+                                                IntegerSuffix false false
+                                                    IntegerSize Int
+                                    BinaryOperator Less
+                            Statement Compound
+                                BlockItem
+                                    Statement Return
+                                        Expression
+                                            Identifier "n"
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    CallExpression
+                                        Expression
+                                            Identifier "fibonacci"
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "n"
+                                                Expression
+                                                    Constant
+                                                        Integer "2"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                                BinaryOperator Minus
+                                Expression
+                                    CallExpression
+                                        Expression
+                                            Identifier "fibonacci"
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "n"
+                                                Expression
+                                                    Constant
+                                                        Integer "1"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                                BinaryOperator Minus
+                                BinaryOperator Plus
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "number"
+                            Initializer
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "nonce"
+                                        Expression
+                                            Constant
+                                                Integer "20"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator Modulo
+                BlockItem
+                    Statement Return
+                        Expression
+                            CallExpression
+                                Expression
+                                    Identifier "fibonacci"
+                                Expression
+                                    Identifier "number"

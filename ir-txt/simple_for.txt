@@ -1,0 +1,87 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "i"
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "sum"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Statement
+                        ForStatement
+                            ForInitializer
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "i"
+                                        Expression
+                                            Constant
+                                                Integer "0"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                        BinaryOperator Assign
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "i"
+                                    Expression
+                                        Constant
+                                            Integer "11"
+                                                IntegerBase Decimal
+                                                IntegerSuffix false false
+                                                    IntegerSize Int
+                                    BinaryOperator Less
+                            Expression
+                                UnaryOperatorExpression
+                                    UnaryOperator PreIncrement
+                                    Expression
+                                        Identifier "i"
+                            Statement Compound
+                                BlockItem
+                                    Statement
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "sum"
+                                                Expression
+                                                    Identifier "i"
+                                                BinaryOperator AssignPlus
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    Identifier "sum"
+                                Expression
+                                    Constant
+                                        Integer "55"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                                BinaryOperator Equals

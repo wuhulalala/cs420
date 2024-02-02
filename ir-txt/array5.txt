@@ -1,0 +1,206 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Int
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "g_a"
+                    DerivedDeclarator
+                        ArrayDeclarator
+                            ArraySize VariableExpression
+                                Expression
+                                    Constant
+                                        Integer "5"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                Initializer
+                    InitializerListItem
+                        Initializer
+                            Expression
+                                Constant
+                                    Integer "1"
+                                        IntegerBase Decimal
+                                        IntegerSuffix false false
+                                            IntegerSize Int
+                    InitializerListItem
+                        Initializer
+                            Expression
+                                Constant
+                                    Integer "2"
+                                        IntegerBase Decimal
+                                        IntegerSuffix false false
+                                            IntegerSize Int
+                    InitializerListItem
+                        Initializer
+                            Expression
+                                Constant
+                                    Integer "3"
+                                        IntegerBase Decimal
+                                        IntegerSuffix false false
+                                            IntegerSize Int
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "init"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "1"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "a"
+                                DerivedDeclarator
+                                    ArrayDeclarator
+                                        ArraySize VariableExpression
+                                            Expression
+                                                Constant
+                                                    Integer "5"
+                                                        IntegerBase Decimal
+                                                        IntegerSuffix false false
+                                                            IntegerSize Int
+                            Initializer
+                                InitializerListItem
+                                    Initializer
+                                        Expression
+                                            Identifier "init"
+                                InitializerListItem
+                                    Initializer
+                                        Expression
+                                            Constant
+                                                Integer "2"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                InitializerListItem
+                                    Initializer
+                                        Expression
+                                            Constant
+                                                Integer "3"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                InitializerListItem
+                                    Initializer
+                                        Expression
+                                            Constant
+                                                Integer "4"
+                                                    IntegerBase Decimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Int
+                                InitializerListItem
+                                    Initializer
+                                        Expression
+                                            UnaryOperatorExpression
+                                                UnaryOperator Minus
+                                                Expression
+                                                    Constant
+                                                        Integer "5"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "sum"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Statement
+                        ForStatement
+                            ForInitializer
+                                Declaration
+                                    DeclarationSpecifier
+                                        TypeSpecifier Int
+                                    InitDeclarator
+                                        Declarator
+                                            DeclaratorKind
+                                                Identifier "i"
+                                        Initializer
+                                            Expression
+                                                Constant
+                                                    Integer "0"
+                                                        IntegerBase Decimal
+                                                        IntegerSuffix false false
+                                                            IntegerSize Int
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "i"
+                                    Expression
+                                        Constant
+                                            Integer "5"
+                                                IntegerBase Decimal
+                                                IntegerSuffix false false
+                                                    IntegerSize Int
+                                    BinaryOperator Less
+                            Expression
+                                UnaryOperatorExpression
+                                    Expression
+                                        Identifier "i"
+                                    UnaryOperator PostIncrement
+                            Statement Compound
+                                BlockItem
+                                    Statement
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "sum"
+                                                Expression
+                                                    BinaryOperatorExpression
+                                                        Expression
+                                                            Identifier "a"
+                                                        Expression
+                                                            Identifier "i"
+                                                        BinaryOperator Index
+                                                BinaryOperator AssignPlus
+                                BlockItem
+                                    Statement
+                                        Expression
+                                            BinaryOperatorExpression
+                                                Expression
+                                                    Identifier "sum"
+                                                Expression
+                                                    BinaryOperatorExpression
+                                                        Expression
+                                                            Identifier "g_a"
+                                                        Expression
+                                                            Identifier "i"
+                                                        BinaryOperator Index
+                                                BinaryOperator AssignPlus
+                BlockItem
+                    Statement Return
+                        Expression
+                            Identifier "sum"

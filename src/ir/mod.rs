@@ -174,6 +174,80 @@ pub struct FunctionDefinition {
     pub bid_init: BlockId,
 }
 
+impl FunctionDefinition {
+    pub fn walk<F>(&mut self, f: F)
+    where
+        F: Fn(&mut Operand),
+    {
+        for block in &mut self.blocks.values_mut() {
+            for instr in &mut block.instructions {
+                match instr.deref_mut() {
+                    Instruction::Nop => {}
+                    Instruction::BinOp { lhs, rhs, .. } => {
+                        f(lhs);
+                        f(rhs);
+                    }
+                    Instruction::UnaryOp { operand, .. } => f(operand),
+                    Instruction::Store { ptr, value } => {
+                        f(ptr);
+                        f(value);
+                    }
+                    Instruction::Load { ptr } => f(ptr),
+                    Instruction::Call { callee, args, .. } => {
+                        f(callee);
+                        for arg in args {
+                            f(arg);
+                        }
+                    }
+                    Instruction::TypeCast { value, .. } => f(value),
+                    Instruction::GetElementPtr { ptr, offset, .. } => {
+                        f(ptr);
+                        f(offset)
+                    }
+                }
+            }
+            match &mut block.exit {
+                BlockExit::Jump { arg } => {
+                    for argument in &mut arg.args {
+                        f(argument)
+                    }
+                }
+                BlockExit::ConditionalJump {
+                    condition,
+                    arg_then,
+                    arg_else,
+                } => {
+                    f(condition);
+                    for argument in &mut arg_then.args {
+                        f(argument)
+                    }
+                    for argument in &mut arg_else.args {
+                        f(argument)
+                    }
+                }
+                BlockExit::Switch {
+                    value,
+                    default,
+                    cases,
+                } => {
+                    f(value);
+                    for argument in &mut default.args {
+                        f(argument)
+                    }
+
+                    for (_, arg) in cases {
+                        for argument in &mut arg.args {
+                            f(argument)
+                        }
+                    }
+                }
+                BlockExit::Return { value } => f(value),
+                BlockExit::Unreachable => {}
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BlockId(pub usize);
 
@@ -373,6 +447,41 @@ impl BlockExit {
                 f(default);
                 for (_, arg) in cases {
                     f(arg);
+                }
+            }
+            Self::Return { .. } | Self::Unreachable => {}
+        }
+    }
+
+    pub fn replace_jump_args<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&mut Operand),
+    {
+        match self {
+            Self::Jump { arg } => {
+                for argument in &mut arg.args {
+                    f(argument)
+                }
+            }
+            Self::ConditionalJump {
+                arg_then, arg_else, ..
+            } => {
+                for argument in &mut arg_then.args {
+                    f(argument)
+                }
+                for argument in &mut arg_else.args {
+                    f(argument)
+                }
+            }
+            Self::Switch { default, cases, .. } => {
+                for argument in &mut default.args {
+                    f(argument)
+                }
+
+                for (_, arg) in cases {
+                    for argument in &mut arg.args {
+                        f(argument)
+                    }
                 }
             }
             Self::Return { .. } | Self::Unreachable => {}

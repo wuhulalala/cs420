@@ -1,0 +1,47 @@
+TranslationUnit
+    ExternalDeclaration
+        Declaration
+            DeclarationSpecifier
+                TypeSpecifier Char
+            InitDeclarator
+                Declarator
+                    DeclaratorKind
+                        Identifier "temp"
+                Initializer
+                    Expression
+                        Constant
+                            Integer "00"
+                                IntegerBase Hexadecimal
+                                IntegerSuffix false false
+                                    IntegerSize Long
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Statement Return
+                        Expression
+                            BinaryOperatorExpression
+                                Expression
+                                    BinaryOperatorExpression
+                                        Expression
+                                            Identifier "temp"
+                                        Expression
+                                            Constant
+                                                Integer "EF36"
+                                                    IntegerBase Hexadecimal
+                                                    IntegerSuffix false false
+                                                        IntegerSize Long
+                                        BinaryOperator Assign
+                                Expression
+                                    Constant
+                                        Integer "2"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Long
+                                BinaryOperator GreaterOrEqual

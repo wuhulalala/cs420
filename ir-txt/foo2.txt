@@ -1,0 +1,98 @@
+TranslationUnit
+    ExternalDeclaration
+        FunctionDefinition
+            DeclarationSpecifier
+                TypeSpecifier Int
+            Declarator
+                DeclaratorKind
+                    Identifier "main"
+                DerivedDeclarator KRFunction
+            Statement Compound
+                BlockItem
+                    Declaration
+                        DeclarationSpecifier
+                            TypeSpecifier Int
+                        InitDeclarator
+                            Declarator
+                                DeclaratorKind
+                                    Identifier "i"
+                            Initializer
+                                Expression
+                                    Constant
+                                        Integer "0"
+                                            IntegerBase Decimal
+                                            IntegerSuffix false false
+                                                IntegerSize Int
+                BlockItem
+                    Statement
+                        ForStatement
+                            ForInitializer
+                                Declaration
+                                    DeclarationSpecifier
+                                        TypeSpecifier Int
+                                    InitDeclarator
+                                        Declarator
+                                            DeclaratorKind
+                                                Identifier "i"
+                                        Initializer
+                                            Expression
+                                                Constant
+                                                    Integer "0"
+                                                        IntegerBase Decimal
+                                                        IntegerSuffix false false
+                                                            IntegerSize Int
+                            Expression
+                                BinaryOperatorExpression
+                                    Expression
+                                        Identifier "i"
+                                    Expression
+                                        Constant
+                                            Integer "10"
+                                                IntegerBase Decimal
+                                                IntegerSuffix false false
+                                                    IntegerSize Int
+                                    BinaryOperator Less
+                            Expression
+                                UnaryOperatorExpression
+                                    UnaryOperator PreIncrement
+                                    Expression
+                                        Identifier "i"
+                            Statement Compound
+                                BlockItem
+                                    Declaration
+                                        DeclarationSpecifier
+                                            TypeSpecifier Int
+                                        InitDeclarator
+                                            Declarator
+                                                DeclaratorKind
+                                                    Identifier "i"
+                                            Initializer
+                                                Expression
+                                                    Constant
+                                                        Integer "0"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                                BlockItem
+                                    Declaration
+                                        DeclarationSpecifier
+                                            TypeSpecifier Int
+                                        InitDeclarator
+                                            Declarator
+                                                DeclaratorKind
+                                                    Identifier "k"
+                                            Initializer
+                                                Expression
+                                                    Constant
+                                                        Integer "0"
+                                                            IntegerBase Decimal
+                                                            IntegerSuffix false false
+                                                                IntegerSize Int
+                BlockItem
+                    Statement Return
+                        Expression
+                            Constant
+                                Integer "1"
+                                    IntegerBase Decimal
+                                    IntegerSuffix false false
+                                        IntegerSize Int

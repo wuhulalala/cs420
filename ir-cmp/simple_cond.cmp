@@ -1,0 +1,24 @@
+24,25c24,25
+<     %l1:i32:t0
+<     %l2:i32:y
+---
+>     %l1:i32:y
+>     %l2:i32:t0
+37c37
+<   %b1:i0:unit = store 1:i32 %l1:i32*
+---
+>   %b1:i0:unit = store 1:i32 %l2:i32*
+41c41
+<   %b2:i0:unit = store 2:i32 %l1:i32*
+---
+>   %b2:i0:unit = store 2:i32 %l2:i32*
+45,46c45,46
+<   %b3:i0:i32 = load %l1:i32*
+<   %b3:i1:unit = store %b3:i0:i32 %l2:i32*
+---
+>   %b3:i0:i32 = load %l2:i32*
+>   %b3:i1:unit = store %b3:i0:i32 %l1:i32*
+48c48
+<   %b3:i3:i32 = load %l2:i32*
+---
+>   %b3:i3:i32 = load %l1:i32*
