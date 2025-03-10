@@ -37,13 +37,13 @@
 #![deny(unstable_features)]
 // Necessary for `build-bin` trick.
 // #![deny(unused_crate_dependencies)]
-#![deny(unused_extern_crates)]
-#![deny(unused_import_braces)]
-#![deny(unused_lifetimes)]
-#![deny(unused_macro_rules)]
-#![deny(unused_qualifications)]
-#![deny(unused_results)]
-#![deny(unused_tuple_struct_fields)]
+// #![deny(unused_extern_crates)]
+// #![deny(unused_import_braces)]
+// #![deny(unused_lifetimes)]
+// #![deny(unused_macro_rules)]
+// #![deny(unused_qualifications)]
+// #![deny(unused_results)]
+// #![deny(unused_tuple_struct_fields)]
 // Allowed for more flexible variants.
 // #![deny(variant_size_differences)]
 

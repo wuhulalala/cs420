@@ -75,7 +75,7 @@ impl<'c> PostOrder<'c> {
     }
 }
 
-fn travese_postorder(bid_init: BlockId, cfg: &HashMap<BlockId, Vec<JumpArg>>) -> Vec<BlockId> {
+pub fn travese_postorder(bid_init: BlockId, cfg: &HashMap<BlockId, Vec<JumpArg>>) -> Vec<BlockId> {
     let mut post_order = PostOrder {
         visited: HashSet::new(),
         cfg,

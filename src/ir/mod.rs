@@ -175,9 +175,9 @@ pub struct FunctionDefinition {
 }
 
 impl FunctionDefinition {
-    pub fn walk<F>(&mut self, f: F)
+    pub fn walk<F>(&mut self, mut f: F)
     where
-        F: Fn(&mut Operand),
+        F: FnMut(&mut Operand),
     {
         for block in &mut self.blocks.values_mut() {
             for instr in &mut block.instructions {
